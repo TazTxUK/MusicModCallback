@@ -111,7 +111,7 @@ local stageapiexists = false
 local overridemusicmgrfuncs = {
 	Play = function(badself, track, vol) return musicPlay(track, nil, true) end,
 	Fadein = function(badself, track, vol) return musicCrossfade(track, nil, true) end,
-	Crossfade = function(badself, track) return musicCrossfade(track, nil) end,
+	Crossfade = function(badself, track, track2) return musicCrossfade(track, track2) end,
 	Queue = function(badself, track) return musicQueue(track, true) end,
 	Fadeout = function(badself, ...) return musicmgr:Fadeout(...) end,
 	Pause = function(badself, ...) return musicmgr:Pause(...) end,
@@ -512,7 +512,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 			musicCrossfade(track1, track2)
 		end
 
-		if usernolayers or MMC.DisableMusicLayers then
+		if MMC.DisableMusicLayers then
 			musicmgr:DisableLayer()
 		end
 		
@@ -541,7 +541,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	satanfightstage = 0
 end)
 
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	if inbadstage then return end
 
 	local room = Game():GetRoom()
@@ -561,6 +561,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
 				musicQueue(getMusicTrack())
 			end
 		end
+		return
 	end
 	
 	if Game():IsGreedMode() then
@@ -644,6 +645,10 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
 			if challengedonenow and not challengedonebefore then
 				musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER)
 			end
+		elseif room:GetType() == RoomType.ROOM_TREASURE then
+			if room:GetFrameCount() == 1 then
+				musicQueue(getStageMusic())
+			end
 		elseif room:GetType() == RoomType.ROOM_BOSS then
 			local currentbosscount = Isaac.CountBosses()
 			
@@ -697,13 +702,15 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
 	end
 	
 	--SECRET ROOM DOORS
-	for i=0,7 do
-		local door = room:GetDoor(i)
-		if door then
-			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
-				if door.State == 2 and doorprevstates[i] == 1 then
-					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
-						musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
+	if room:GetFrameCount() > 1 then
+		for i=0,7 do
+			local door = room:GetDoor(i)
+			if door then
+				if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
+					if door.State == 2 and doorprevstates[i] == 1 then
+						if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
+							musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
+						end
 					end
 				end
 			end
@@ -730,5 +737,6 @@ MMC.RemoveMusicCallback = removeMusicCallback
 -- MMC.GetCallbacks = function() return Callbacks end
 MMC.InCustomStage = function() return inbadstage end
 MMC.Manager = function() return overridemusicmgr end
+MMC.WeakManager = function() return weakmusicmgr end
 MMC.DisableMusicLayers = false
 MMC.Initialised = true
