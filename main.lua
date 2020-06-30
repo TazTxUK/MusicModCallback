@@ -1,3 +1,5 @@
+if MMC then return end
+
 local MusicModCallback = RegisterMod("Music Mod Callback", 1)
 
 MMC = {}
@@ -274,6 +276,7 @@ local function getMusicTrack()
 	local room = game:GetRoom()
 	local roomtype = room:GetType()
 	local level = game:GetLevel()
+	local roomdesc = level:GetCurrentRoomDesc()
 	
 	if roomtype == RoomType.ROOM_DEFAULT then
 		return getStageMusic()
@@ -310,7 +313,7 @@ local function getMusicTrack()
 				return Music.MUSIC_JINGLE_BOSS
 			end
 		end
-	elseif roomtype == RoomType.ROOM_MINIBOSS then
+	elseif roomtype == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 		if room:IsClear() then
 			return Music.MUSIC_BOSS_OVER
 		else
@@ -559,7 +562,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_EXECUTE_CMD, function(self, cmd, pa
 	end
 end)
 
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	if inbadstage then return end
 
 	local room = Game():GetRoom()
@@ -567,6 +570,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
 	local roomclearnow = room:IsClear()
 	local challengedonenow = room:IsAmbushDone()
 	local challengeactivenow = room:IsAmbushActive()
+	local roomdesc = Game():GetLevel():GetCurrentRoomDesc()
 	
 	if waitingforgamestjingle and room:GetFrameCount() > 10 then
 		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
@@ -659,6 +663,10 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
 			if challengedonenow and not challengedonebefore then
 				musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER)
 			end
+		elseif room:GetType() == RoomType.ROOM_TREASURE then
+			if room:GetFrameCount() == 1 then
+				musicQueue(getStageMusic())
+			end
 		elseif room:GetType() == RoomType.ROOM_BOSS then
 			local currentbosscount = Isaac.CountBosses()
 			
@@ -694,7 +702,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
 			end
 			
 			previousbosscount = currentbosscount
-		elseif room:GetType() == RoomType.ROOM_MINIBOSS then
+		elseif room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 			local currentbosscount = Isaac.CountBosses()
 			
 			if currentbosscount == 0 and previousbosscount > 0 then
