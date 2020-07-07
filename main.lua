@@ -278,7 +278,13 @@ local function getMusicTrack()
 	local level = game:GetLevel()
 	local roomdesc = level:GetCurrentRoomDesc()
 	
-	if roomtype == RoomType.ROOM_DEFAULT then
+	if roomtype == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
+		if room:IsClear() then
+			return Music.MUSIC_BOSS_OVER
+		else
+			return getGenericBossMusic()
+		end
+	elseif roomtype == RoomType.ROOM_DEFAULT then
 		return getStageMusic()
 	elseif roomtype == RoomType.ROOM_SHOP then
 		if (game:IsGreedMode() or level:GetStage() ~= StageType.STAGE4_3) then
@@ -312,12 +318,6 @@ local function getMusicTrack()
 			else
 				return Music.MUSIC_JINGLE_BOSS
 			end
-		end
-	elseif roomtype == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
-		if room:IsClear() then
-			return Music.MUSIC_BOSS_OVER
-		else
-			return getGenericBossMusic()
 		end
 	elseif roomtype == RoomType.ROOM_SECRET then
 		return Music.MUSIC_SECRET_ROOM
