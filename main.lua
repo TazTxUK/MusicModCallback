@@ -57,7 +57,7 @@ local newmusicenum = {
 	MUSIC_JINGLE_CHALLENGE_ENTRY = Isaac.GetMusicIdByName("Challenge Room Entry (jingle)"),
 	MUSIC_JINGLE_CHALLENGE_OUTRO = Isaac.GetMusicIdByName("Challenge Room Outro (jingle)"),
 	MUSIC_JINGLE_GAME_OVER = Isaac.GetMusicIdByName("Game Over (jingle)"),
-	MUSIC_JINGLE_DEVILROOM_FIND = Isaac.GetMusicIdByName("Challenge Room Outro (jingle)"),
+	MUSIC_JINGLE_DEVILROOM_FIND = Isaac.GetMusicIdByName("Devil Room appear (jingle)"),
 	MUSIC_JINGLE_GAME_START = Isaac.GetMusicIdByName("Game start (jingle)"),
 	MUSIC_JINGLE_NIGHTMARE = Isaac.GetMusicIdByName("Nightmare"),
 	MUSIC_JINGLE_BOSS_OVER2 = Isaac.GetMusicIdByName("Boss Death Alternate (jingle)"),
@@ -287,13 +287,13 @@ local function getMusicTrack()
 	elseif roomtype == RoomType.ROOM_DEFAULT then
 		return getStageMusic()
 	elseif roomtype == RoomType.ROOM_SHOP then
-		if (game:IsGreedMode() or level:GetStage() ~= StageType.STAGE4_3) then
+		if (game:IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) then
 			return Music.MUSIC_SHOP_ROOM
 		else
 			return getStageMusic()
 		end
 	elseif roomtype == RoomType.ROOM_TREASURE then
-		if room:IsFirstVisit() and (game:IsGreedMode() or level:GetStage() ~= StageType.STAGE4_3) then
+		if room:IsFirstVisit() and (game:IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) then
 			local rng = math.random(0,3)
 			local jingle
 			if rng == 0 then
@@ -675,7 +675,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			if room:GetBossID() == 24 then
-				if satanfightstage == 0 and currentbosscount > 1 then
+				if currentbosscount > 1 then
 					musicCrossfade(getGenericBossMusic())
 					satanfightstage = 1
 				elseif satanfightstage == 1 and currentbosscount == 1 then
