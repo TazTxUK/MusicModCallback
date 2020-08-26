@@ -671,24 +671,27 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			local currentbosscount = Isaac.CountBosses()
 			
 			if currentbosscount > 0 and room:GetFrameCount() == 1 then
+				satanfightstage = 0
 				musicCrossfade(getBossMusic())
 			end
 			
-			if room:GetBossID() == 24 then
-				if currentbosscount > 1 then
-					musicCrossfade(getGenericBossMusic())
-					satanfightstage = 1
-				elseif satanfightstage == 1 and currentbosscount == 1 then
-					musicCrossfade(Music.MUSIC_SATAN_BOSS)
-					satanfightstage = 2
+			if room:GetFrameCount() > 1 then
+				if room:GetBossID() == 24 then
+					if satanfightstage == 0 and currentbosscount > 1 then
+						musicCrossfade(getGenericBossMusic())
+						satanfightstage = 1
+					elseif satanfightstage == 1 and currentbosscount == 1 then
+						musicCrossfade(Music.MUSIC_SATAN_BOSS)
+						satanfightstage = 2
+					end
+				elseif room:GetBossID() == 55 then
+					if Isaac.GetPlayer(0).Position.Y < 540 and satanfightstage == 0 and room:GetFrameCount() > 10 then
+						musicCrossfade(Music.MUSIC_SATAN_BOSS)
+						satanfightstage = 3
+					end
+				else
+					satanfightstage = 0
 				end
-			elseif room:GetBossID() == 55 then
-				if Isaac.GetPlayer(0).Position.Y < 540 and satanfightstage == 0 and room:GetFrameCount() > 10 then
-					musicCrossfade(Music.MUSIC_SATAN_BOSS)
-					satanfightstage = 3
-				end
-			else
-				satanfightstage = 0
 			end
 			
 			if currentbosscount == 0 and previousbosscount > 0 then
