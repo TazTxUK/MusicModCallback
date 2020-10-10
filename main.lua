@@ -480,7 +480,7 @@ function musicQueue(track)
 	end
 end
 
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, function()
+function MusicModCallback:StageAPIcheck()
 	if StageAPI and StageAPI.Loaded then
 		stageapiexists = true
 	else
@@ -500,7 +500,9 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, function()
 	else
 		inbadstage = false
 	end
-end)
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
