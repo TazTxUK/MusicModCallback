@@ -9,4 +9,10 @@
 	<track id="96" name="Nightmare" path="JINGLE OGG/boss fight intro jingle_01.ogg" loop="false" />
 	<track id="100" name="Intro Voiceover" path="IntroVoiceover.ogg" loop="false" />
 	<track id="101" name="Epilogue Voiceover" path="Epilogue_01m.ogg" loop="false" />
+	
+	<track id="63" name="Title Screen (Repentance)" intro="Repentance/Genesis Retake Light Intro.ogg" path="Repentance/Genesis Retake Light Loop.ogg" layerintro="Repentance/Genesis Retake Twisted Intro.ogg" layer="Repentance/Genesis Retake Twisted Loop.ogg" loop="true" layermode="2" layerfadespeed="0.01" />
+	<track id="64" name="Game start (jingle, twisted)" path="Repentance/Title Screen Stinger MB.ogg" loop="false" />
+	<track id="65" name="Nightmare (alt)" path="Repentance/Nightmare_V4.ogg" loop="false" />
+	<track id="70" name="Credits Alt" path="Jesus Loves Uke.ogg" loop="false" />
+	<track id="71" name="Credits Alt Final" path="Repentance/Jesus Loves Viggo V3.ogg" loop="false" mul="1.9" />
 </music>
