@@ -1,6 +1,8 @@
+if REPENTANCE then return end
+
 if MMC then return end
 
-local MusicModCallback = RegisterMod("Music Mod Callback", 1)
+local MusicModCallback = RegisterMod("[AB+] Music Mod Callback", 1)
 
 MMC = {}
 
