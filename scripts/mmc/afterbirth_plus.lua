@@ -3,6 +3,7 @@ if MMC then return end
 local MusicModCallback = RegisterMod("Music Mod Callback", 1)
 
 MMC = {}
+MMC.Mod = MusicModCallback
 
 MMC.Version = "1.2"
 
@@ -16,7 +17,7 @@ local newmusicenum = {
 	MUSIC_CELLAR = Isaac.GetMusicIdByName("Cellar"),
 	MUSIC_CATACOMBS = Isaac.GetMusicIdByName("Catacombs"),
 	MUSIC_NECROPOLIS = Isaac.GetMusicIdByName("Necropolis"),
-	MUSIC_WOMB_UTERO = Isaac.GetMusicIdByName("Womb/Utero"),
+	MUSIC_WOMB_UTERO = Isaac.GetMusicIdByName("Womb"),
 	MUSIC_GAME_OVER = Isaac.GetMusicIdByName("Game Over"),
 	MUSIC_BOSS = Isaac.GetMusicIdByName("Boss"),
 	MUSIC_CATHEDRAL = Isaac.GetMusicIdByName("Cathedral"),
