@@ -121,6 +121,19 @@ for _,n in pairs(newmusicenum) do
 end
 newmusicenum.NUM_MUSIC = newmusicenum.NUM_MUSIC + 1
 
+local musicmgr = MusicManager()
+
+MusicPreMMC = MusicPreMMC or Music
+
+local redirectmusicenum = {}
+for i,v in pairs(MusicPreMMC) do
+	if v < MusicPreMMC.NUM_MUSIC and redirectmusicenum[v] ~= newmusicenum[i] then
+		redirectmusicenum[v] = newmusicenum[i]
+	end
+end
+
+Music = newmusicenum
+
 local chapter_music = {}
 MMC.ChapterMusic = chapter_music
 local chapter_music_greed = {}
@@ -199,19 +212,6 @@ chapter_music_greed[LevelStage.STAGE4_GREED] = chapter_music[LevelStage.STAGE4_1
 chapter_music_greed[LevelStage.STAGE5_GREED] = chapter_music[LevelStage.STAGE5]
 chapter_music_greed[LevelStage.STAGE6_GREED] = chapter_music[LevelStage.STAGE6] --TODO CHANGE THIS DONT FORGET
 chapter_music_greed[LevelStage.STAGE7_GREED] = chapter_music[LevelStage.STAGE7]
-
-local musicmgr = MusicManager()
-
-MusicPreMMC = MusicPreMMC or Music
-
-local redirectmusicenum = {}
-for i,v in pairs(MusicPreMMC) do
-	if v < MusicPreMMC.NUM_MUSIC and redirectmusicenum[v] ~= newmusicenum[i] then
-		redirectmusicenum[v] = newmusicenum[i]
-	end
-end
-
-Music = newmusicenum
 
 local function correctedTrackNum(n)
 	if redirectmusicenum[n] then
@@ -481,7 +481,7 @@ end
 
 function musicCrossfade(track, track2)
 	local replacedtrack2 = false
-	local id, id2 = iterateThroughCallbacks(track or false)
+	local id, id2 = iterateThroughCallbacks(track)
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
 	if not id then
@@ -838,6 +838,7 @@ MMC.GetStageTrack = getStageMusic
 MMC.GetGenericBossTrack = getGenericBossMusic
 MMC.AddMusicCallback = addMusicCallback
 MMC.RemoveMusicCallback = removeMusicCallback
+MMC.GetCorrectedTrackNum = correctedTrackNum
 -- MMC.GetCallbacks = function() return Callbacks end
 MMC.InCustomStage = function() return inbadstage end
 MMC.Manager = function() return overridemusicmgr end
