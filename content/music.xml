@@ -93,7 +93,6 @@
 	<track name="Gehenna" path="Repentance/Gehenna.ogg" layer="Repentance/Gehenna Heavy.ogg" loop="true" layerfadespeed="0.005" mul="1.5" layermul="1.75" />
 	<track name="not done" intro="The Womb Chapter Four Intro.ogg" path="The Womb Chapter Four.ogg" layerintro="The Womb Layer Intro.ogg" layer="The Womb Layer.ogg" loop="true" layerfadespeed="0.005" />
 	<track name="Home" path="Repentance/Echoes Of Mom.ogg" layer="Repentance/Echoes of Mom Twisted V2.ogg" loop="true" layerfadespeed="0.005" layermode="2" />
-	<track name="Final Voiceover" path="Repentance/End End End VO.ogg" loop="false" />
 	<track name="Downpour (reversed)" path="Repentance/Downpour Reverse.ogg" loop="true" />
 	<track name="Dross (reversed)" path="Repentance/Dross Reverse.ogg" loop="true" mul="1.2" />
 	<track name="Abandoned Mineshaft" path="Repentance/Vast Empty Chasm.ogg" loop="true" />
