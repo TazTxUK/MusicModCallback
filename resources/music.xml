@@ -15,4 +15,5 @@
 	<track id="65" name="Nightmare (alt)" path="Repentance/Nightmare_V4.ogg" loop="false" />
 	<track id="70" name="Credits Alt" path="Jesus Loves Uke.ogg" loop="false" />
 	<track id="71" name="Credits Alt Final" path="Repentance/Jesus Loves Viggo V3.ogg" loop="false" mul="1.9" />
+	<track id="113" name="Final Voiceover" path="Repentance/End End End VO.ogg" loop="false" />
 </music>
