@@ -318,6 +318,22 @@ local function getGenericBossMusic()
 	end
 end
 
+local function getGenericBossDeathJingle()
+	local game = Game()
+	local level = game:GetLevel()
+	local stage_type = level:GetStageType()
+	local room = game:GetRoom()
+	if stage_type == StageType.STAGETYPE_REPENTANCE or stage_type == StageType.STAGETYPE_REPENTANCE_B then
+		return Music.MUSIC_JINGLE_BOSS_OVER3
+	else
+		if room:GetDecorationSeed() % 2 == 0 then
+			return Music.MUSIC_JINGLE_BOSS_OVER
+		else
+			return Music.MUSIC_JINGLE_BOSS_OVER2
+		end
+	end
+end
+
 local function getBossMusic()
 	local room = Game():GetRoom()
 	
@@ -361,7 +377,7 @@ local function getMusicTrack()
 		if room:IsClear() then
 			return Music.MUSIC_BOSS_OVER
 		else
-			return getGenericBossMusic()
+			return Music.MUSIC_CHALLENGE_FIGHT --Minibosses play Challenge music in Repentance
 		end
 	elseif roomtype == RoomType.ROOM_DEFAULT then
 		return getStageMusic()
@@ -418,6 +434,8 @@ local function getMusicTrack()
 		return Music.MUSIC_PLANETARIUM
 	elseif roomtype == RoomType.ROOM_ULTRASECRET then
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
+	elseif roomtype == 27 then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
+		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
 	else
 		return getStageMusic()
 	end
@@ -656,8 +674,17 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	local challengedonenow = room:IsAmbushDone()
 	local challengeactivenow = room:IsAmbushActive()
 	local roomdesc = Game():GetLevel():GetCurrentRoomDesc()
+	local currentMusicId = musicmgr:GetCurrentMusicID()
+	local ispaused = Game():IsPaused()
 	
-	if waitingforgamestjingle and room:GetFrameCount() > 10 then
+	--play music even if pause instantly after starting game
+	if ispaused and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
+		currentMusicId = 0
+	end
+	
+	--if starting from menu, wait for start jingle to end 
+	--upon reset, play new music immediately
+	if waitingforgamestjingle and (room:GetFrameCount() > 10 or (currentMusicId ~= Music.MUSIC_JINGLE_GAME_START and currentMusicId ~= Music.MUSIC_JINGLE_GAME_START_ALT)) then
 		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
 			musicCrossfade(getBossMusic())
 		else
@@ -669,6 +696,13 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	
 	if Game():IsGreedMode() then
 		local currentgreedwave = Game():GetLevel().GreedModeWave
+		local totalWaves
+		
+		if Game().Difficulty == Difficulty.DIFFICULTY_GREEDIER then
+			totalWaves = 12
+		else
+			totalWaves = 11
+		end
 		
 		if room:GetType() == RoomType.ROOM_BOSS then
 			local currentbosscount = Isaac.CountBosses()
@@ -699,13 +733,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				end
 				
 				if currentbosscount == 0 and previousbosscount > 0 then
-					local bossjingle
-					if room:GetDecorationSeed() % 2 == 0 then
-						bossjingle = Music.MUSIC_JINGLE_BOSS_OVER
-					else
-						bossjingle = Music.MUSIC_JINGLE_BOSS_OVER2
-					end
-					musicCrossfade(bossjingle, Music.MUSIC_BOSS_OVER)
+					musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
 				end
 			end
 			
@@ -713,7 +741,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		else
 			if level:GetStage() == LevelStage.STAGE6_GREED then
 				if room:GetType() == RoomType.ROOM_DEFAULT then
-					if currentgreedwave < 9 then
+					if currentgreedwave < (totalWaves - 2) then
 						if roomclearbefore and not roomclearnow then
 							musicCrossfade(Music.MUSIC_CHALLENGE_FIGHT)
 						end
@@ -726,14 +754,16 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			
 			if room:GetType() == RoomType.ROOM_DEFAULT then
 				if roomclearbefore and not roomclearnow then
-					if currentgreedwave == 9 or currentgreedwave == 10 then
-						musicCrossfade(Music.MUSIC_BOSS2)
-					elseif currentgreedwave == 11 then
+					if currentgreedwave == (totalWaves - 2) or currentgreedwave == (totalWaves - 1) then
+						musicCrossfade(getGenericBossMusic())
+					elseif currentgreedwave == totalWaves then
 						musicCrossfade(Music.MUSIC_SATAN_BOSS)
 					end
 				elseif roomclearnow and not roomclearbefore then
-					if currentgreedwave >= 9 then
-						musicCrossfade(Music.MUSIC_JINGLE_BOSS_OVER2, Music.MUSIC_BOSS_OVER)
+					if currentgreedwave == (totalWaves - 2) or currentgreedwave == (totalWaves - 1) then
+						musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+					elseif currentgreedwave == totalWaves then
+						musicCrossfade(Music.MUSIC_BOSS_OVER) --no boss over jingle after Devil Deal Wave
 					end
 				end
 			end
@@ -743,7 +773,13 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	else
 		if room:GetType() == RoomType.ROOM_CHALLENGE or room:GetType() == RoomType.ROOM_BOSSRUSH then
 			if challengeactivenow and not challengeactivebefore then
-				musicCrossfade(Music.MUSIC_CHALLENGE_FIGHT)
+				local challengeMusicToPlay
+				if room:GetType() == RoomType.ROOM_BOSSRUSH then
+					challengeMusicToPlay = Music.MUSIC_BOSS_RUSH
+				else
+					challengeMusicToPlay = Music.MUSIC_CHALLENGE_FIGHT
+				end
+				musicCrossfade(challengeMusicToPlay)
 			end
 			if challengedonenow and not challengedonebefore then
 				musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER)
@@ -780,13 +816,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			if currentbosscount == 0 and previousbosscount > 0 then
-				local bossjingle
-				if room:GetDecorationSeed() % 2 == 0 then
-					bossjingle = Music.MUSIC_JINGLE_BOSS_OVER
-				else
-					bossjingle = Music.MUSIC_JINGLE_BOSS_OVER2
-				end
-				musicCrossfade(bossjingle, Music.MUSIC_BOSS_OVER)
+				musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
 			end
 			
 			previousbosscount = currentbosscount
@@ -794,13 +824,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			local currentbosscount = Isaac.CountBosses()
 			
 			if currentbosscount == 0 and previousbosscount > 0 then
-				local bossjingle
-				if room:GetDecorationSeed() % 2 == 0 then
-					bossjingle = Music.MUSIC_JINGLE_BOSS_OVER
-				else
-					bossjingle = Music.MUSIC_JINGLE_BOSS_OVER2
-				end
-				musicCrossfade(bossjingle, Music.MUSIC_BOSS_OVER)
+				musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER) --minibosses play Challenge music in Repentance
 			end
 			
 			previousbosscount = currentbosscount
