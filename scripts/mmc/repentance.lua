@@ -210,8 +210,12 @@ chapter_music_greed[LevelStage.STAGE2_GREED] = chapter_music[LevelStage.STAGE2_1
 chapter_music_greed[LevelStage.STAGE3_GREED] = chapter_music[LevelStage.STAGE3_1]
 chapter_music_greed[LevelStage.STAGE4_GREED] = chapter_music[LevelStage.STAGE4_1]
 chapter_music_greed[LevelStage.STAGE5_GREED] = chapter_music[LevelStage.STAGE5]
-chapter_music_greed[LevelStage.STAGE6_GREED] = chapter_music[LevelStage.STAGE6] --TODO CHANGE THIS DONT FORGET
-chapter_music_greed[LevelStage.STAGE7_GREED] = chapter_music[LevelStage.STAGE7]
+
+chapter_music_greed[LevelStage.STAGE6_GREED] = {
+	[StageType.STAGETYPE_ORIGINAL] = Music.MUSIC_SHOP_ROOM,
+}
+
+chapter_music_greed[LevelStage.STAGE7_GREED] = chapter_music_greed[LevelStage.STAGE6_GREED]
 
 local function correctedTrackNum(n)
 	if redirectmusicenum[n] then
@@ -436,7 +440,7 @@ local function getMusicTrack()
 		return Music.MUSIC_PLANETARIUM
 	elseif roomtype == RoomType.ROOM_ULTRASECRET then
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
-	elseif roomtype == 27 then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
+	elseif roomtype == RoomType.ROOM_SECRET_EXIT or 27 then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
 		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
 	else
 		return getStageMusic()
