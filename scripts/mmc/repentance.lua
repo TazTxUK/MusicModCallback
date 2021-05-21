@@ -237,6 +237,8 @@ local waitingforgamestjingle = true
 local satanfightstage = 0
 local doorprevstates = {}
 local inbadstage = false
+-- local treasure_jingle_timer
+-- local treasure_volume = false
 
 local stageapiexists = false
 
@@ -616,7 +618,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		challengeactivebefore = room:IsAmbushActive()
 		challengedonebefore = room:IsAmbushDone()
 		roomclearbefore = room:IsClear()
-
+		
 		if not waitingforgamestjingle then
 			musicCrossfade(getMusicTrack())
 		end
@@ -631,12 +633,24 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 				doorprevstates[i] = door.State
 			end
 		end
+		
+		-- if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() then
+			-- treasure_jingle_timer = 180
+			-- treasure_volume = false
+		-- end
 	end
 end)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent)
-	if ent.Type == 102 and ent.Variant == 2 then
+	if ent.Variant == 2 then
 		musicCrossfade(Music.MUSIC_HUSH_BOSS)
+	end
+end, EntityType.ENTITY_HUSH)
+
+MusicModCallback:AddCallback(ModCallbacks.MC_PRE_ENTITY_SPAWN,
+function(self, type, variant, subtype, position, velocity, spawner, seed)
+	if type == EntityType.ENTITY_DOGMA and variant == 1 then
+		musicCrossfade(Music.MUSIC_DOGMA_BOSS)
 	end
 end)
 
@@ -693,6 +707,20 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		waitingforgamestjingle = false
 		return
 	end
+	
+	-- if treasure_jingle_timer then
+		-- if treasure_jingle_timer > 0 then
+			-- if not treasure_volume then
+				-- musicmgr:VolumeSlide(0.1)
+				-- treasure_volume = true
+			-- end
+			-- treasure_jingle_timer = treasure_jingle_timer - 1
+		-- else
+			-- treasure_jingle_timer = nil
+			-- treasure_volume = false
+			-- musicmgr:VolumeSlide(1)
+		-- end	
+	-- end
 	
 	if Game():IsGreedMode() then
 		local currentgreedwave = Game():GetLevel().GreedModeWave
@@ -783,10 +811,6 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			if challengedonenow and not challengedonebefore then
 				musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER)
-			end
-		elseif room:GetType() == RoomType.ROOM_TREASURE then
-			if room:GetFrameCount() == 1 then
-				musicQueue(getStageMusic())
 			end
 		elseif room:GetType() == RoomType.ROOM_BOSS then
 			local currentbosscount = Isaac.CountBosses()
