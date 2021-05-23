@@ -433,9 +433,21 @@ local function getMusicTrack()
 	elseif roomtype == RoomType.ROOM_LIBRARY then
 		return Music.MUSIC_LIBRARY_ROOM
 	elseif roomtype == RoomType.ROOM_CHALLENGE then
-		return Music.MUSIC_BOSS_OVER
+		if room:IsAmbushDone() then	
+			return Music.MUSIC_BOSS_OVER
+		elseif room:IsAmbushActive() then
+			return Music.MUSIC_CHALLENGE_FIGHT
+		else
+			return getStageMusic()
+		end
 	elseif roomtype == RoomType.ROOM_BOSSRUSH then
-		return Music.MUSIC_BOSS_OVER
+		if room:IsAmbushDone() then	
+			return Music.MUSIC_BOSS_OVER
+		elseif room:IsAmbushActive() then
+			return Music.MUSIC_BOSS_RUSH
+		else
+			return getStageMusic()
+		end
 	elseif roomtype == RoomType.ROOM_PLANETARIUM then
 		return Music.MUSIC_PLANETARIUM
 	elseif roomtype == RoomType.ROOM_ULTRASECRET then
@@ -725,6 +737,15 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			-- musicmgr:VolumeSlide(1)
 		-- end	
 	-- end
+	
+	--Angel Statue fight; works for Normal and Greed Mode
+	if room:GetType() == RoomType.ROOM_ANGEL then
+		if roomclearbefore and not roomclearnow then
+			musicCrossfade(getGenericBossMusic())
+		elseif roomclearnow and not roomclearbefore then
+			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+		end
+	end
 	
 	if Game():IsGreedMode() then
 		local currentgreedwave = Game():GetLevel().GreedModeWave
