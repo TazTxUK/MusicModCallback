@@ -381,8 +381,11 @@ local function getMusicTrack()
 	local roomdesc = level:GetCurrentRoomDesc()
 	local stage = level:GetStage()
 	local roomidx = level:GetCurrentRoomIndex()
+	local ascent = game:GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and stage <= 6
 	
-	if roomtype == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
+	if ascent then
+		return Music.MUSIC_REVERSE_GENESIS
+	elseif roomtype == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 		if room:IsClear() then
 			return Music.MUSIC_BOSS_OVER
 		else
