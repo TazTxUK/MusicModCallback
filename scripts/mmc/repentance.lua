@@ -342,30 +342,31 @@ end
 
 local function getBossMusic()
 	local room = Game():GetRoom()
+	local boss_id = room:GetBossID()
 	
-	if room:GetBossID() == 6 then
+	if boss_id == 6 then
 		return Music.MUSIC_MOM_BOSS
-	elseif room:GetBossID() == 8 then
+	elseif boss_id == 8 then
 		return Music.MUSIC_MOMS_HEART_BOSS
-	elseif room:GetBossID() == 25 then
+	elseif boss_id == 25 then
 		return Music.MUSIC_MOMS_HEART_BOSS
-	elseif room:GetBossID() == 24 then
+	elseif boss_id == 24 then
 		return Music.MUSIC_DEVIL_ROOM
-	elseif room:GetBossID() == 39 then
+	elseif boss_id == 39 then
 		return Music.MUSIC_ISAAC_BOSS
-	elseif room:GetBossID() == 40 then
+	elseif boss_id == 40 then
 		return Music.MUSIC_BLUEBABY_BOSS
-	elseif room:GetBossID() == 54 then
+	elseif boss_id == 54 then
 		return Music.MUSIC_DARKROOM_BOSS
-	elseif room:GetBossID() == 55 then
+	elseif boss_id == 55 then
 		return Music.MUSIC_DEVIL_ROOM
-	elseif room:GetBossID() == 62 then
+	elseif boss_id == 62 then
 		return Music.MUSIC_ULTRAGREED_BOSS
-	elseif room:GetBossID() == 63 then
+	elseif boss_id == 63 then
 		return Music.MUSIC_BLUEBABY_BOSS
-	elseif room:GetBossID() == 70 then
+	elseif boss_id == 70 then
 		return Music.MUSIC_VOID_BOSS
-	elseif room:GetBossID() == 88 then
+	elseif boss_id == 88 then
 		return Music.MUSIC_MOTHER_BOSS
 	end
 	
@@ -378,6 +379,8 @@ local function getMusicTrack()
 	local roomtype = room:GetType()
 	local level = game:GetLevel()
 	local roomdesc = level:GetCurrentRoomDesc()
+	local stage = level:GetStage()
+	local roomidx = level:GetCurrentRoomIndex()
 	
 	if roomtype == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 		if room:IsClear() then
@@ -454,6 +457,8 @@ local function getMusicTrack()
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
 	elseif roomtype == (RoomType.ROOM_SECRET_EXIT or 27) then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
 		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
+	elseif stage == LevelStage.STAGE8 and roomidx == -10 then
+		return Music.MUSIC_BEAST_BOSS
 	else
 		return getStageMusic()
 	end
@@ -661,12 +666,14 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent)
 	if ent.Variant == 2 then
 		musicCrossfade(Music.MUSIC_HUSH_BOSS)
 	end
-end, EntityType.ENTITY_HUSH)
+end, EntityType.ENTITY_ISAAC)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_ENTITY_SPAWN,
 function(self, type, variant, subtype, position, velocity, spawner, seed)
 	if type == EntityType.ENTITY_DOGMA and variant == 1 then
 		musicCrossfade(Music.MUSIC_DOGMA_BOSS)
+	elseif type == EntityType.ENTITY_BEAST then
+		musicCrossfade(Music.MUSIC_BEAST_BOSS)
 	end
 end)
 
