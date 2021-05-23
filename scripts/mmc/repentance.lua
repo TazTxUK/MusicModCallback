@@ -457,8 +457,12 @@ local function getMusicTrack()
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
 	elseif roomtype == (RoomType.ROOM_SECRET_EXIT or 27) then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
 		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
-	elseif stage == LevelStage.STAGE8 and roomidx == -10 then
+	elseif roomidx == -10 then
 		return Music.MUSIC_BEAST_BOSS
+	elseif roomidx == -14 then
+		return getGenericBossMusic()
+	elseif roomidx == -15 then
+		return getGenericBossMusic()
 	else
 		return getStageMusic()
 	end
