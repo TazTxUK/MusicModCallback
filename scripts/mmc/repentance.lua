@@ -440,7 +440,7 @@ local function getMusicTrack()
 		return Music.MUSIC_PLANETARIUM
 	elseif roomtype == RoomType.ROOM_ULTRASECRET then
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
-	elseif roomtype == RoomType.ROOM_SECRET_EXIT or 27 then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
+	elseif roomtype == (RoomType.ROOM_SECRET_EXIT or 27) then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
 		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
 	else
 		return getStageMusic()
