@@ -244,6 +244,8 @@ local waitingforgamestjingle = true
 local satanfightstage = 0
 local doorprevstates = {}
 local inbadstage = false
+local hadphotobefore = false
+local foundknifepiecebefore = false
 -- local treasure_jingle_timer
 -- local treasure_volume = false
 
@@ -780,8 +782,6 @@ function(self, type, variant, subtype, position, velocity, spawner, seed)
 		musicCrossfade(Music.MUSIC_DOGMA_BOSS)
 	elseif type == EntityType.ENTITY_BEAST then
 		musicCrossfade(Music.MUSIC_BEAST_BOSS)
-	--elseif type == EntityType.ENTITY_MOTHERS_SHADOW then --this does not work as intended, keeping as a comment for now
-	--	musicCrossfade(Music.MUSIC_MOTHERS_SHADOW_INTRO, Music.MUSIC_MINESHAFT_ESCAPE)
 	end
 end)
 
@@ -793,6 +793,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	previousgreedwave = 0
 	previousbosscount = 0
 	satanfightstage = 0
+	hadphotobefore = false
+	foundknifepiecebefore = false
 	Isaac.SaveModData(MusicModCallback, json.encode(modSaveData))
 end)
 
@@ -817,7 +819,7 @@ end)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	if inbadstage then return end
-
+	
 	local room = Game():GetRoom()
 	local level = Game():GetLevel()
 	local roomclearnow = room:IsClear()
@@ -858,13 +860,21 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		-- end	
 	-- end
 	
-	--Angel Statue fight; works for Normal and Greed Mode
+	--Angel Statue fight and minibosses; works for Normal and Greed Mode
 	if room:GetType() == RoomType.ROOM_ANGEL then
 		if roomclearbefore and not roomclearnow then
 			musicCrossfade(getGenericBossMusic())
 		elseif roomclearnow and not roomclearbefore then
 			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
 		end
+	elseif room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
+		local currentbosscount = Isaac.CountBosses()
+		
+		if currentbosscount == 0 and previousbosscount > 0 then
+			musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER) --minibosses play Challenge music in Repentance
+		end
+		
+		previousbosscount = currentbosscount
 	end
 	
 	if Game():IsGreedMode() then
@@ -989,14 +999,33 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			previousbosscount = currentbosscount
-		elseif room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
-			local currentbosscount = Isaac.CountBosses()
+		elseif level:GetStage() == LevelStage.STAGE3_2 and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
+			local topDoor = room:GetDoor(DoorSlot.UP0)
+			if topDoor and topDoor.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
+				local player = Game():GetPlayer(0)
+				local havephotonow = (player:HasCollectible(CollectibleType.COLLECTIBLE_POLAROID,true) or player:HasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE,true))
+				
+				if hadphotobefore and not havephotonow then
+					musicPlay(Music.MUSIC_STRANGE_DOOR_JINGLE, getMusicTrack())
+				end
+				
+				hadphotobefore = havephotonow
+			end
+		elseif modSaveData["inmineshaft"] then
+			local foundknifepiecenow
 			
-			if currentbosscount == 0 and previousbosscount > 0 then
-				musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER) --minibosses play Challenge music in Repentance
+			local knifetable = Isaac.FindByType(EntityType.ENTITY_PICKUP,PickupVariant.PICKUP_COLLECTIBLE,CollectibleType.COLLECTIBLE_KNIFE_PIECE_2)
+			if next(knifetable) == nil then
+				foundknifepiecenow = false
+			else
+				foundknifepiecenow = true
 			end
 			
-			previousbosscount = currentbosscount
+			if foundknifepiecebefore and not foundknifepiecenow then
+				musicPlay(Music.MUSIC_MOTHERS_SHADOW_INTRO, Music.MUSIC_MINESHAFT_ESCAPE)
+			end
+			
+			foundknifepiecebefore = foundknifepiecenow
 		end
 	end
 	
