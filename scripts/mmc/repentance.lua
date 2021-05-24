@@ -2,6 +2,9 @@ if MMC then return end
 
 local MusicModCallback = RegisterMod("Music Mod Callback", 1)
 
+local json = require("json")
+local modSaveData = {}
+
 MMC = {}
 MMC.Mod = MusicModCallback
 
@@ -285,13 +288,23 @@ local weakmusicmgr = {}
 setmetatable(weakmusicmgr, weakmusicmgrfuncs)
 setmetatable(weakmusicmgrfuncs, overridemusicmgrfuncs)
 
+--it seems that if this code runs on game start, it only looks at save file 1
+--it will look at the correct save file after enabling the mod from the Mod menu of a particular save file
+--nonetheless, I think we should load this info again upon starting or continuing a run
 if Isaac.HasModData(MusicModCallback) then
 	local dat = Isaac.LoadModData(MusicModCallback)
+	--handles legacy data system
 	if dat == "0" then
 		usernolayers = true
 	elseif dat == "1" then
 		usernolayers = false
+	else
+		modSaveData = json.decode(dat)
+		usernolayers = (modSaveData["usernolayers"] or false)
 	end
+	modSaveData["usernolayers"] = usernolayers
+else
+	modSaveData["usernolayers"] = false
 end
 
 local function getChapterMusic(floor_type, floor_variant, greed)
@@ -632,8 +645,31 @@ function MusicModCallback:StageAPIcheck()
 		inbadstage = false
 	end
 end
+
+function MusicModCallback:LoadSaveData(isContinued)
+	--run this when we start a game so we get the correct data for this save file
+	if Isaac.HasModData(MusicModCallback) then
+		local dat = Isaac.LoadModData(MusicModCallback)
+		
+		--handles legacy data system
+		if dat == "0" then
+			usernolayers = true
+		elseif dat == "1" then
+			usernolayers = false
+		else
+			modSaveData = json.decode(dat)
+			usernolayers = (modSaveData["usernolayers"] or false)
+		end
+		
+		modSaveData["usernolayers"] = usernolayers
+	else
+		modSaveData["usernolayers"] = false
+	end
+end
+
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.LoadSaveData)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
@@ -692,18 +728,23 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	previousgreedwave = 0
 	previousbosscount = 0
 	satanfightstage = 0
+	Isaac.SaveModData(MusicModCallback, json.encode(modSaveData))
 end)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_EXECUTE_CMD, function(self, cmd, params)
 	if cmd == "mmclayer" then
 		if params == "0" then
 			usernolayers = true
-			Isaac.SaveModData(MusicModCallback, "0")
+			modSaveData["usernolayers"] = usernolayers
+			Isaac.SaveModData(MusicModCallback, json.encode(modSaveData))
+			--Isaac.SaveModData(MusicModCallback, "0") --legacy
 			musicmgr:DisableLayer()
 			return "Disabled music layers.\n"
 		elseif params == "1" then
 			usernolayers = false
-			Isaac.SaveModData(MusicModCallback, "1")
+			modSaveData["usernolayers"] = usernolayers
+			Isaac.SaveModData(MusicModCallback, json.encode(modSaveData))
+			--Isaac.SaveModData(MusicModCallback, "1") --legacy
 			return "Enabled music layers.\n"
 		end
 	end
