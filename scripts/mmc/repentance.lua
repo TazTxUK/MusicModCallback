@@ -396,6 +396,23 @@ local function getMusicTrack()
 	local roomidx = level:GetCurrentRoomIndex()
 	local ascent = game:GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and stage <= 6
 	
+	if modSaveData["inmirroredworld"] then
+		if roomtype ~= RoomType.ROOM_BOSS then
+			local stage_type = level:GetStageType()
+			if stage_type == StageType.STAGETYPE_REPENTANCE then
+				return Music.MUSIC_DOWNPOUR_REVERSE --in vanilla, the reversed track is slowly faded in on top of the normal track (this is a low priority stretch goal)
+			elseif stage_type == StageType.STAGETYPE_REPENTANCE_B then
+				return Music.MUSIC_DROSS_REVERSE
+			end
+		end
+	elseif modSaveData["inmineshaft"] then
+		if level:GetStateFlag(LevelStateFlag.STATE_MINESHAFT_ESCAPE) then --this flag doesn't seem to be set until leaving the room after Mom's Shadow spawns
+			return Music.MUSIC_MINESHAFT_ESCAPE
+		else
+			return Music.MUSIC_MINESHAFT_AMBIENT
+		end
+	end
+	
 	if ascent then
 		return Music.MUSIC_REVERSE_GENESIS
 	elseif roomtype == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
@@ -662,18 +679,47 @@ function MusicModCallback:LoadSaveData(isContinued)
 		end
 		
 		modSaveData["usernolayers"] = usernolayers
+		modSaveData["inmirrorroom"] = (modSaveData["inmirrorroom"] or false)
+		modSaveData["inmirroredworld"] = (modSaveData["inmirroredworld"] or false)
+		modSaveData["inmineroom"] = (modSaveData["inmineroom"] or false)
+		modSaveData["inmineshaft"] = (modSaveData["inmineshaft"] or false)
+		
+		if not isContinued then --when starting a new run, of course we are not in mirror room or mirrored world!
+			modSaveData["inmirrorroom"] = false
+			modSaveData["inmirroredworld"] = false
+			modSaveData["inmineroom"] = false
+			modSaveData["inmineshaft"] = false
+		end
 	else
 		modSaveData["usernolayers"] = false
+		modSaveData["inmirrorroom"] = false
+		modSaveData["inmirroredworld"] = false
+		modSaveData["inmineroom"] = false
+		modSaveData["inmineshaft"] = false
 	end
 end
 
+function MusicModCallback:UpdateSaveValuesForNewFloor()
+	modSaveData["inmirrorroom"] = false
+	modSaveData["inmirroredworld"] = false
+	modSaveData["inmineroom"] = false
+	modSaveData["inmineshaft"] = false
+end
+
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.UpdateSaveValuesForNewFloor)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.LoadSaveData)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
 		local room = Game():GetRoom()
+		
+		local previousinmirrorroom = modSaveData["inmirrorroom"]
+		modSaveData["inmirrorroom"] = false
+		
+		local previousinmineroom = modSaveData["inmineroom"]
+		modSaveData["inmineroom"] = false
 		
 		previousgreedwave = 0
 		previousbosscount = 0
@@ -683,19 +729,36 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		challengedonebefore = room:IsAmbushDone()
 		roomclearbefore = room:IsClear()
 		
+		for i=0,7 do
+			local door = room:GetDoor(i)
+			if door then
+				doorprevstates[i] = door.State
+				
+				if door.TargetRoomIndex == -100 then --the Mirror
+					modSaveData["inmirrorroom"] = true
+				elseif door.TargetRoomIndex == -101 then --the door to the Mineshaft
+					modSaveData["inmineroom"] = true
+				end
+			end
+		end
+		
+		if previousinmirrorroom and modSaveData["inmirrorroom"] then
+			--this isn't ideal, but I can't find a GameStateFlag or something similar for being in the mirrored world
+			if SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_ENTER) or SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_EXIT) then
+				modSaveData["inmirroredworld"] = (not modSaveData["inmirroredworld"])
+			end
+		elseif previousinmineroom and modSaveData["inmineroom"] then
+			--I'm concerned that a teleporting item or the D7 (restart room) could trigger this
+			modSaveData["inmineshaft"] = (not modSaveData["inmineshaft"])
+		end
+		
+		--NOTE: moved this below the door loop because we need to play Mirror Music immediately, and getMusicTrack() does not use doorprevstates
 		if not waitingforgamestjingle then
 			musicCrossfade(getMusicTrack())
 		end
 		
 		if usernolayers or MMC.DisableMusicLayers then
 			musicmgr:DisableLayer()
-		end
-		
-		for i=0,7 do
-			local door = room:GetDoor(i)
-			if door then
-				doorprevstates[i] = door.State
-			end
 		end
 		
 		-- if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() then
@@ -717,6 +780,8 @@ function(self, type, variant, subtype, position, velocity, spawner, seed)
 		musicCrossfade(Music.MUSIC_DOGMA_BOSS)
 	elseif type == EntityType.ENTITY_BEAST then
 		musicCrossfade(Music.MUSIC_BEAST_BOSS)
+	--elseif type == EntityType.ENTITY_MOTHERS_SHADOW then --this does not work as intended, keeping as a comment for now
+	--	musicCrossfade(Music.MUSIC_MOTHERS_SHADOW_INTRO, Music.MUSIC_MINESHAFT_ESCAPE)
 	end
 end)
 
