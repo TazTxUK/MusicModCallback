@@ -829,8 +829,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	local currentMusicId = musicmgr:GetCurrentMusicID()
 	local ispaused = Game():IsPaused()
 	
-	--play music even if pause instantly after starting game
-	if ispaused and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
+	--play music even if pause within first 10 frames (except on frame zero)
+	if ispaused and room:GetFrameCount() > 0 and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
 		currentMusicId = 0
 	end
 	
