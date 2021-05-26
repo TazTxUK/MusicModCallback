@@ -244,6 +244,8 @@ local waitingforgamestjingle = true
 local satanfightstage = 0
 local doorprevstates = {}
 local inbadstage = false
+local hadphotobefore = false
+local foundknifepiecebefore = false
 -- local treasure_jingle_timer
 -- local treasure_volume = false
 
@@ -395,6 +397,23 @@ local function getMusicTrack()
 	local stage = level:GetStage()
 	local roomidx = level:GetCurrentRoomIndex()
 	local ascent = game:GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and stage <= 6
+	
+	if modSaveData["inmirroredworld"] then
+		if roomtype ~= RoomType.ROOM_BOSS then
+			local stage_type = level:GetStageType()
+			if stage_type == StageType.STAGETYPE_REPENTANCE then
+				return Music.MUSIC_DOWNPOUR_REVERSE --in vanilla, the reversed track is slowly faded in on top of the normal track (this is a low priority stretch goal)
+			elseif stage_type == StageType.STAGETYPE_REPENTANCE_B then
+				return Music.MUSIC_DROSS_REVERSE
+			end
+		end
+	elseif modSaveData["inmineshaft"] then
+		if level:GetStateFlag(LevelStateFlag.STATE_MINESHAFT_ESCAPE) then --this flag doesn't seem to be set until leaving the room after Mom's Shadow spawns
+			return Music.MUSIC_MINESHAFT_ESCAPE
+		else
+			return Music.MUSIC_MINESHAFT_AMBIENT
+		end
+	end
 	
 	if ascent then
 		return Music.MUSIC_REVERSE_GENESIS
@@ -662,18 +681,47 @@ function MusicModCallback:LoadSaveData(isContinued)
 		end
 		
 		modSaveData["usernolayers"] = usernolayers
+		modSaveData["inmirrorroom"] = (modSaveData["inmirrorroom"] or false)
+		modSaveData["inmirroredworld"] = (modSaveData["inmirroredworld"] or false)
+		modSaveData["inmineroom"] = (modSaveData["inmineroom"] or false)
+		modSaveData["inmineshaft"] = (modSaveData["inmineshaft"] or false)
+		
+		if not isContinued then --when starting a new run, of course we are not in mirror room or mirrored world!
+			modSaveData["inmirrorroom"] = false
+			modSaveData["inmirroredworld"] = false
+			modSaveData["inmineroom"] = false
+			modSaveData["inmineshaft"] = false
+		end
 	else
 		modSaveData["usernolayers"] = false
+		modSaveData["inmirrorroom"] = false
+		modSaveData["inmirroredworld"] = false
+		modSaveData["inmineroom"] = false
+		modSaveData["inmineshaft"] = false
 	end
 end
 
+function MusicModCallback:UpdateSaveValuesForNewFloor()
+	modSaveData["inmirrorroom"] = false
+	modSaveData["inmirroredworld"] = false
+	modSaveData["inmineroom"] = false
+	modSaveData["inmineshaft"] = false
+end
+
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.UpdateSaveValuesForNewFloor)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.LoadSaveData)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
 		local room = Game():GetRoom()
+		
+		local previousinmirrorroom = modSaveData["inmirrorroom"]
+		modSaveData["inmirrorroom"] = false
+		
+		local previousinmineroom = modSaveData["inmineroom"]
+		modSaveData["inmineroom"] = false
 		
 		previousgreedwave = 0
 		previousbosscount = 0
@@ -683,19 +731,36 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		challengedonebefore = room:IsAmbushDone()
 		roomclearbefore = room:IsClear()
 		
+		for i=0,7 do
+			local door = room:GetDoor(i)
+			if door then
+				doorprevstates[i] = door.State
+				
+				if door.TargetRoomIndex == -100 then --the Mirror
+					modSaveData["inmirrorroom"] = true
+				elseif door.TargetRoomIndex == -101 then --the door to the Mineshaft
+					modSaveData["inmineroom"] = true
+				end
+			end
+		end
+		
+		if previousinmirrorroom and modSaveData["inmirrorroom"] then
+			--this isn't ideal, but I can't find a GameStateFlag or something similar for being in the mirrored world
+			if SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_ENTER) or SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_EXIT) then
+				modSaveData["inmirroredworld"] = (not modSaveData["inmirroredworld"])
+			end
+		elseif previousinmineroom and modSaveData["inmineroom"] then
+			--I'm concerned that a teleporting item or the D7 (restart room) could trigger this
+			modSaveData["inmineshaft"] = (not modSaveData["inmineshaft"])
+		end
+		
+		--NOTE: moved this below the door loop because we need to play Mirror Music immediately, and getMusicTrack() does not use doorprevstates
 		if not waitingforgamestjingle then
 			musicCrossfade(getMusicTrack())
 		end
 		
 		if usernolayers or MMC.DisableMusicLayers then
 			musicmgr:DisableLayer()
-		end
-		
-		for i=0,7 do
-			local door = room:GetDoor(i)
-			if door then
-				doorprevstates[i] = door.State
-			end
 		end
 		
 		-- if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() then
@@ -728,6 +793,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	previousgreedwave = 0
 	previousbosscount = 0
 	satanfightstage = 0
+	hadphotobefore = false
+	foundknifepiecebefore = false
 	Isaac.SaveModData(MusicModCallback, json.encode(modSaveData))
 end)
 
@@ -752,7 +819,7 @@ end)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	if inbadstage then return end
-
+	
 	local room = Game():GetRoom()
 	local level = Game():GetLevel()
 	local roomclearnow = room:IsClear()
@@ -762,8 +829,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	local currentMusicId = musicmgr:GetCurrentMusicID()
 	local ispaused = Game():IsPaused()
 	
-	--play music even if pause instantly after starting game
-	if ispaused and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
+	--play music even if pause within first 10 frames (except on frame zero)
+	if ispaused and room:GetFrameCount() > 0 and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
 		currentMusicId = 0
 	end
 	
@@ -793,13 +860,21 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		-- end	
 	-- end
 	
-	--Angel Statue fight; works for Normal and Greed Mode
+	--Angel Statue fight and minibosses; works for Normal and Greed Mode
 	if room:GetType() == RoomType.ROOM_ANGEL then
 		if roomclearbefore and not roomclearnow then
 			musicCrossfade(getGenericBossMusic())
 		elseif roomclearnow and not roomclearbefore then
 			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
 		end
+	elseif room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
+		local currentbosscount = Isaac.CountBosses()
+		
+		if currentbosscount == 0 and previousbosscount > 0 then
+			musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER) --minibosses play Challenge music in Repentance
+		end
+		
+		previousbosscount = currentbosscount
 	end
 	
 	if Game():IsGreedMode() then
@@ -924,14 +999,33 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			previousbosscount = currentbosscount
-		elseif room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
-			local currentbosscount = Isaac.CountBosses()
+		elseif level:GetStage() == LevelStage.STAGE3_2 and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
+			local topDoor = room:GetDoor(DoorSlot.UP0)
+			if topDoor and topDoor.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
+				local player = Game():GetPlayer(0)
+				local havephotonow = (player:HasCollectible(CollectibleType.COLLECTIBLE_POLAROID,true) or player:HasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE,true))
+				
+				if hadphotobefore and not havephotonow then
+					musicPlay(Music.MUSIC_STRANGE_DOOR_JINGLE, getMusicTrack())
+				end
+				
+				hadphotobefore = havephotonow
+			end
+		elseif modSaveData["inmineshaft"] then
+			local foundknifepiecenow
 			
-			if currentbosscount == 0 and previousbosscount > 0 then
-				musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER) --minibosses play Challenge music in Repentance
+			local knifetable = Isaac.FindByType(EntityType.ENTITY_PICKUP,PickupVariant.PICKUP_COLLECTIBLE,CollectibleType.COLLECTIBLE_KNIFE_PIECE_2)
+			if next(knifetable) == nil then
+				foundknifepiecenow = false
+			else
+				foundknifepiecenow = true
 			end
 			
-			previousbosscount = currentbosscount
+			if foundknifepiecebefore and not foundknifepiecenow then
+				musicPlay(Music.MUSIC_MOTHERS_SHADOW_INTRO, Music.MUSIC_MINESHAFT_ESCAPE)
+			end
+			
+			foundknifepiecebefore = foundknifepiecenow
 		end
 	end
 	
