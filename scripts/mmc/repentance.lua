@@ -450,7 +450,11 @@ local function getMusicTrack()
 		end
 	elseif roomtype == RoomType.ROOM_BOSS then
 		if room:IsClear() then
-			return Music.MUSIC_BOSS_OVER
+			if stage == LevelStage.STAGE3_2 and level:GetStageType() == StageType.STAGETYPE_REPENTANCE_B then
+				return Music.MUSIC_BOSS_OVER_TWISTED
+			else
+				return Music.MUSIC_BOSS_OVER
+			end
 		else
 			if room:GetBossID() == 0 then
 				return getGenericBossMusic()
@@ -779,7 +783,7 @@ end, EntityType.ENTITY_ISAAC)
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_ENTITY_SPAWN,
 function(self, type, variant, subtype, position, velocity, spawner, seed)
 	if type == EntityType.ENTITY_DOGMA and variant == 1 then
-		musicCrossfade(Music.MUSIC_DOGMA_BOSS)
+		musicCrossfade(Music.MUSIC_DOGMA_INTRO, Music.MUSIC_DOGMA_BOSS)
 	elseif type == EntityType.ENTITY_BEAST then
 		musicCrossfade(Music.MUSIC_BEAST_BOSS)
 	end
@@ -955,6 +959,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		previousgreedwave = currentgreedwave
 	else
 		if room:GetType() == RoomType.ROOM_CHALLENGE or room:GetType() == RoomType.ROOM_BOSSRUSH then
+			--for some reason boss rush music wasnt being triggered here
+			--but was working fine in getMusicTrack()
 			if challengeactivenow and not challengeactivebefore then
 				local challengeMusicToPlay
 				if room:GetType() == RoomType.ROOM_BOSSRUSH then
@@ -964,8 +970,16 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				end
 				musicCrossfade(challengeMusicToPlay)
 			end
+			--make sure boss rush music is played, not challenge music
+			if challengeactivenow and not challengedonenow and room:GetType() == RoomType.ROOM_BOSSRUSH then
+				musicCrossfade(Music.MUSIC_BOSS_RUSH)
+			end
 			if challengedonenow and not challengedonebefore then
-				musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER)
+				if room:GetType() == RoomType.ROOM_BOSSRUSH then
+					musicCrossfade(Music.MUSIC_JINGLE_BOSS_RUSH_OUTRO, Music.MUSIC_BOSS_OVER)
+				else
+					musicCrossfade(Music.MUSIC_JINGLE_CHALLENGE_OUTRO, Music.MUSIC_BOSS_OVER)
+				end
 			end
 		elseif room:GetType() == RoomType.ROOM_BOSS then
 			local currentbosscount = Isaac.CountBosses()
@@ -995,7 +1009,11 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			if currentbosscount == 0 and previousbosscount > 0 then
-				musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+				if level:GetStage() == LevelStage.STAGE3_2 and level:GetStageType() == StageType.STAGETYPE_REPENTANCE_B then
+					musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER_TWISTED)
+				else
+					musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+				end
 			end
 			
 			previousbosscount = currentbosscount
