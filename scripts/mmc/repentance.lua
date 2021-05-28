@@ -395,8 +395,10 @@ local function getMusicTrack()
 	local level = game:GetLevel()
 	local roomdesc = level:GetCurrentRoomDesc()
 	local stage = level:GetStage()
+	local stagetype = level:GetStageType()
 	local roomidx = level:GetCurrentRoomIndex()
 	local ascent = game:GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and stage <= 6
+	local inrepstage = stagetype == StageType.STAGETYPE_REPENTANCE or stagetype == StageType.STAGETYPE_REPENTANCE_B
 	
 	if modSaveData["inmirroredworld"] then
 		if roomtype ~= RoomType.ROOM_BOSS then
@@ -450,11 +452,16 @@ local function getMusicTrack()
 		end
 	elseif roomtype == RoomType.ROOM_BOSS then
 		if room:IsClear() then
-			if stage == LevelStage.STAGE3_2 and level:GetStageType() == StageType.STAGETYPE_REPENTANCE_B then
-				return Music.MUSIC_BOSS_OVER_TWISTED
-			else
-				return Music.MUSIC_BOSS_OVER
+			if inrepstage and stage == LevelStage.STAGE3_2 then
+				if game:GetStateFlag(GameStateFlag.STATE_MAUSOLEUM_HEART_KILLED) then
+					if room:GetBossID() == 8 then
+						return Music.MUSIC_NULL --No music plays here
+					else
+						return Music.MUSIC_BOSS_OVER_TWISTED
+					end
+				end
 			end
+			return Music.MUSIC_BOSS_OVER
 		else
 			if room:GetBossID() == 0 then
 				return getGenericBossMusic()
