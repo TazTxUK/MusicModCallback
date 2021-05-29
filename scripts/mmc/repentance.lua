@@ -472,7 +472,7 @@ local function getMusicTrack()
 	elseif roomtype == RoomType.ROOM_SECRET then
 		return Music.MUSIC_SECRET_ROOM
 	elseif roomtype == RoomType.ROOM_SUPERSECRET then
-		return Music.MUSIC_SECRET_ROOM
+		return Music.MUSIC_SECRET_ROOM2
 	elseif roomtype == RoomType.ROOM_ARCADE then
 		return Music.MUSIC_ARCADE_ROOM
 	elseif roomtype == RoomType.ROOM_DEVIL then
