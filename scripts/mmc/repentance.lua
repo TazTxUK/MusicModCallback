@@ -389,6 +389,10 @@ local function getBossMusic()
 end
 
 local function getMusicTrack()
+	if waitingforgamestjingle then
+		return musicmgr:GetCurrentMusicID()
+	end
+	
 	local game = Game()
 	local room = game:GetRoom()
 	local roomtype = room:GetType()
@@ -840,6 +844,10 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	local currentMusicId = musicmgr:GetCurrentMusicID()
 	local ispaused = Game():IsPaused()
 	
+	if room:GetFrameCount() < 10 and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
+		waitingforgamestjingle = true
+	end
+	
 	--play music even if pause within first 10 frames (except on frame zero)
 	if ispaused and room:GetFrameCount() > 0 and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
 		currentMusicId = 0
@@ -848,12 +856,12 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	--if starting from menu, wait for start jingle to end 
 	--upon reset, play new music immediately
 	if waitingforgamestjingle and (room:GetFrameCount() > 10 or (currentMusicId ~= Music.MUSIC_JINGLE_GAME_START and currentMusicId ~= Music.MUSIC_JINGLE_GAME_START_ALT)) then
+		waitingforgamestjingle = false
 		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
 			musicCrossfade(getBossMusic())
 		else
 			musicCrossfade(getMusicTrack())
 		end
-		waitingforgamestjingle = false
 		return
 	end
 	
