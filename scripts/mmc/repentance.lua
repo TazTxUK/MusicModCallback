@@ -543,7 +543,7 @@ function removeMusicCallback(ref)
 	end
 end
 
-local function iterateThroughCallbacks(track) -- returns correct track
+local function iterateThroughCallbacks(track, isQueued) -- returns correct track
 	for i=1,#Callbacks do
 		local v = Callbacks[i]
 		
@@ -560,7 +560,7 @@ local function iterateThroughCallbacks(track) -- returns correct track
 		end
 		
 		if trackincallback then
-			local s, res, res2 = pcall(v.func, v.ref, track)
+			local s, res, res2 = pcall(v.func, v.ref, track, isQueued)
 			if s then
 				res = tonumber(res)
 				if res then
@@ -576,7 +576,7 @@ end
 
 function musicCrossfade(track, track2)
 	local replacedtrack2 = false
-	local id, id2 = iterateThroughCallbacks(track)
+	local id, id2 = iterateThroughCallbacks(track, false)
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
 	if not id then
@@ -603,7 +603,7 @@ function musicCrossfade(track, track2)
 			if replacedtrack2 then
 				musicmgr:Crossfade(correctedTrackNum(id2))
 			else
-				musicCrossfade(id2, nil)
+				musicCrossfade(id2, false)
 			end
 		else
 			musicmgr:Fadeout()
@@ -613,7 +613,7 @@ end
 
 function musicPlay(track, track2)
 	local replacedtrack2 = false
-	local id, id2 = iterateThroughCallbacks(track or false)
+	local id, id2 = iterateThroughCallbacks(track or false, false)
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
 	if id and id > 0 then
@@ -635,7 +635,7 @@ function musicPlay(track, track2)
 				musicmgr:Play(correctedTrackNum(id2),1)
 				musicmgr:UpdateVolume()
 			else
-				musicPlay(id2, nil)
+				musicPlay(id2)
 			end
 		else
 			musicmgr:Fadeout()
@@ -652,7 +652,7 @@ function musicPlay(track, track2)
 end
 
 function musicQueue(track)
-	local id = iterateThroughCallbacks(track or false)
+	local id = iterateThroughCallbacks(track or false, true)
 	if id and id > 0 then
 		musicmgr:Queue(correctedTrackNum(id))
 	end
