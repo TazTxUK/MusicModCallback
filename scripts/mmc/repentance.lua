@@ -909,33 +909,40 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		if room:GetType() == RoomType.ROOM_BOSS then
 			local currentbosscount = Isaac.CountBosses()
 			
-			if room:GetBossID() == 62 then
-				if satanfightstage == 0 then
-					if currentbosscount == 0 then
-						satanfightstage = 2
-						musicCrossfade(Music.MUSIC_BOSS_OVER)
-						return
-					end
-					satanfightstage = 1
-					musicCrossfade(getBossMusic())
-				elseif satanfightstage == 1 then
-					for i,v in ipairs(Isaac.GetRoomEntities()) do
-						if v.Type == EntityType.ENTITY_ULTRA_GREED then
-							if v:ToNPC().State == 9001 then
-								satanfightstage = 2
-								musicCrossfade(Music.MUSIC_JINGLE_BOSS_OVER, Music.MUSIC_BOSS_OVER)
+			if currentbosscount > 0 and room:GetFrameCount() == 1 then
+				satanfightstage = 0
+				musicCrossfade(getBossMusic())
+			end
+			
+			if room:GetFrameCount() > 1 then
+				if room:GetBossID() == 62 then
+					if satanfightstage == 0 then
+						if currentbosscount == 0 then
+							satanfightstage = 2
+							musicCrossfade(Music.MUSIC_BOSS_OVER)
+							return
+						end
+						satanfightstage = 1
+						musicCrossfade(getBossMusic())
+					elseif satanfightstage == 1 then
+						for i,v in ipairs(Isaac.GetRoomEntities()) do
+							if v.Type == EntityType.ENTITY_ULTRA_GREED then
+								if v:ToNPC().State == 9001 then
+									satanfightstage = 2
+									musicCrossfade(Music.MUSIC_BOSS_OVER) --don't play boss over jingle for Ultra Greed
+								end
+								break
 							end
-							break
 						end
 					end
-				end
-			else
-				if currentbosscount > 0 and room:GetFrameCount() == 1 then
-					musicCrossfade(getBossMusic())
-				end
-				
-				if currentbosscount == 0 and previousbosscount > 0 then
-					musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+				else
+					if currentbosscount > 0 and previousbosscount == 0 then
+						musicCrossfade(getGenericBossMusic())
+					end
+					
+					if currentbosscount == 0 and previousbosscount > 0 then
+						musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+					end
 				end
 			end
 			
