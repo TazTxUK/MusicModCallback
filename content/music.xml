@@ -78,6 +78,7 @@
 	<track name="Treasure Room Entry (jingle) 4" path="JINGLE OGG/treasure room discover_03.ogg" loop="false" />
 	<track name="Challenge Room Entry (jingle)" path="JINGLE OGG/Ambush jingle.V2_01.ogg" loop="false" />
 	<track name="Challenge Room Outro (jingle)" path="JINGLE OGG/Ambush Jinle outro V3_04.ogg" loop="false" />
+	<track name="Game Over (jingle)" path="JINGLE OGG/Isaac Died_02.ogg" loop="false" />
 	<track name="Devil Room appear (jingle)" path="JINGLE OGG/Satan Room Appear V2_01.ogg" loop="false" />
 	<track name="Boss Death Alternate (jingle)" path="Afterbirth/Cerebrum Dispersio (boss alt) end.ogg" loop="false" />
 	<track name="Boss Hush Death (jingle)" path="Afterbirth/Morituros (dead womb boss) outro.ogg" loop="false" />
