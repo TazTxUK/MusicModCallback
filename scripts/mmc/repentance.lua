@@ -728,6 +728,12 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.Up
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.LoadSaveData)
 
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_END, function(isGameOver)
+	if isGameOver then
+		musicCrossfade(Music.MUSIC_JINGLE_GAME_OVER, Music.MUSIC_GAME_OVER)
+	end
+end)
+
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
 		local room = Game():GetRoom()
@@ -1031,8 +1037,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			if currentbosscount == 0 and previousbosscount > 0 then
-				if level:GetStage() == LevelStage.STAGE3_2 and level:GetStageType() == StageType.STAGETYPE_REPENTANCE_B then
-					musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER_TWISTED)
+				if level:GetStage() == LevelStage.STAGE3_2 and room:GetBossID() == 8 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+					musicCrossfade(Music.MUSIC_NULL)
 				else
 					musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
 				end
@@ -1045,6 +1051,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				local player = Game():GetPlayer(0)
 				local havephotonow = (player:HasCollectible(CollectibleType.COLLECTIBLE_POLAROID,true) or player:HasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE,true))
 				
+				--TODO: The Faded Polaroid trinket can be used instead
 				if hadphotobefore and not havephotonow then
 					musicPlay(Music.MUSIC_STRANGE_DOOR_JINGLE, getMusicTrack())
 				end
