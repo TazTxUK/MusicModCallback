@@ -246,8 +246,67 @@ local doorprevstates = {}
 local inbadstage = false
 local hadphotobefore = false
 local foundknifepiecebefore = false
--- local treasure_jingle_timer
--- local treasure_volume = false
+
+--this table is only for the start jingles, and for unlooped tracks that, under specific circumstances, need to continue playing upon entering a new room and retain the queued track
+local musicJingles = {}
+
+--Cyber: "The length numbers used are subject to adjustment, but they matched vanilla fairly closely on my computer; I REALLY hope they're not machine dependent"
+musicJingles[Music.MUSIC_JINGLE_GAME_START] = {
+	["length"] = 220,
+	["timeleft"] = 0,
+	["gamestart"] = true,
+}
+musicJingles[Music.MUSIC_JINGLE_GAME_START_ALT] = {
+	["length"] = 220,
+	["timeleft"] = 0,
+	["gamestart"] = true,
+}
+musicJingles[Music.MUSIC_JINGLE_BOSS_OVER] = {
+	["length"] = 370, --these numbers will be in roughly 1/48 of a second, i.e. # of MC_POST_RENDER calls
+	["timeleft"] = 0, --i.e. how many more MC_POST_RENDER calls until the jingle ends
+	["nexttrack"] = Music.MUSIC_BOSS_OVER,
+}
+musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2] = {
+	["length"] = 242,
+	["timeleft"] = 0,
+	["nexttrack"] = Music.MUSIC_BOSS_OVER,
+}
+musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3] = {
+	["length"] = 434,
+	["timeleft"] = 0,
+	["nexttrack"] = Music.MUSIC_BOSS_OVER,
+}
+musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO] = {
+	["length"] = 425,
+	["timeleft"] = 0,
+	["nexttrack"] = Music.MUSIC_MINESHAFT_ESCAPE,
+}
+
+local soundJingleTimer --renamed treasure_jingle_timer
+local soundJingleVolume = false --renamed treasure_volume
+local soundJingles = {}
+--[[
+--we can uncomment and finish up this block once custom sounds are fixed
+--replaced Beast Growl (sound id 815) with .wav trasure jingles during testing
+soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_0] = {
+	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 1")
+}
+soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_1] = {
+	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 2")
+}
+soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2] = {
+	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 3")
+}
+soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3] = {
+	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 4")
+}
+soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
+	["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Secret Room Jingle")
+}
+soundJingles[Music.MUSIC_JINGLE_SECRETROOM_FIND] = {
+	["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Strange Door Jingle")
+}
+--]]
 
 local stageapiexists = false
 
@@ -438,22 +497,7 @@ local function getMusicTrack()
 			return getStageMusic()
 		end
 	elseif roomtype == RoomType.ROOM_TREASURE then
-		if room:IsFirstVisit() and (game:IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) then
-			local rng = math.random(0,3)
-			local jingle
-			if rng == 0 then
-				jingle = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_0
-			elseif rng == 1 then
-				jingle = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_1
-			elseif rng == 2 then
-				jingle = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2
-			elseif rng == 3 then
-				jingle = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3
-			end
-			return jingle, getStageMusic()
-		else
-			return getStageMusic()
-		end
+		return getStageMusic()
 	elseif roomtype == RoomType.ROOM_BOSS then
 		if room:IsClear() then
 			if inrepstage and stage == LevelStage.STAGE3_2 then
@@ -560,11 +604,11 @@ local function iterateThroughCallbacks(track, isQueued) -- returns correct track
 		end
 		
 		if trackincallback then
-			local s, res, res2 = pcall(v.func, v.ref, track, isQueued)
+			local s, res, res2, len = pcall(v.func, v.ref, track, isQueued) --len is jingle length or jingle sound id
 			if s then
 				res = tonumber(res)
 				if res then
-					return res, tonumber(res2)
+					return res, tonumber(res2), tonumber(len)
 				end
 			else
 				Isaac.ConsoleOutput("Error in music mod callback: "..res.."\n")
@@ -576,12 +620,28 @@ end
 
 function musicCrossfade(track, track2)
 	local replacedtrack2 = false
-	local id, id2 = iterateThroughCallbacks(track, false)
+	local id, id2, jinglelength = iterateThroughCallbacks(track, false)
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
 	if not id then
 		return
 	elseif id > 0 then
+		--NOTE: which tracks are considered jingles is based on the track BEFORE replacement
+		--for example, anything that replaces a boss over jingle is considered a jingle
+		--but if a boss over jingle replaces a stage track, it is not considered a jingle
+		--IMPORTANT: replaced jingles can have different length, so if the callback function does not return a length, do not run special jingle code
+		--NOTE: the intention is that if a function does not return jinglelength, then the code runs like normal with no issues
+		if musicJingles[track] and (jinglelength or track == id) then --if we replaced this jingle and didn't provide length, don't run jingle-specific code
+			--Isaac.DebugString("running music jingle code for track "..tostring(track))
+			--Isaac.DebugString("jinglelength found to be "..tostring(jinglelength))
+			if jinglelength then
+				musicJingles[track]["timeleft"] = jinglelength
+			else
+				musicJingles[track]["timeleft"] = musicJingles[track]["length"]
+			end
+			musicJingles[track]["nexttrack"] = track2
+			id2 = 0 --don't queue because we are going to play in the MC_POST_RENDER function
+		end
 		if musicmgr:GetCurrentMusicID() ~= id then
 			musicmgr:Crossfade(correctedTrackNum(id))
 		end
@@ -613,13 +673,56 @@ end
 
 function musicPlay(track, track2)
 	local replacedtrack2 = false
-	local id, id2 = iterateThroughCallbacks(track or false, false)
+	local id, id2, jingleinfo = iterateThroughCallbacks(track or false, false)
+	
+	--NOTE: which tracks are considered jingles is based on the track BEFORE replacement
+	--for example, anything that replaces a treasure room jingle is considered a jingle
+	--but if a treasure room jingle replaces a stage track, it is not considered a jingle
+	--IMPORTANT: replaced jingles probably have a different sound ID, so if the callback function does not return a sound id, do not run special jingle code
+	--NOTE: the intention is that if a function does not return jingleinfo, then the code runs like normal with no issues
+	if soundJingles[track] and (jingleinfo or track == id) then --if we replaced this jingle and didn't provide jingleinfo, don't run jingle-specific code
+		--Isaac.DebugString("running sound jingle code for track "..tostring(track))
+		--Isaac.DebugString("jingleinfo found to be "..tostring(jingleinfo))
+		local sfxid
+		if jingleinfo then
+			sfxid = jingleinfo
+		else
+			sfxid = soundJingles[track]["id"]
+		end
+		--Isaac.DebugString("sfxid found to be "..tostring(sfxid))
+		if sfxid and sfxid > 0 then
+			SFXManager():Play(sfxid,1,0,false,1)
+			soundJingleTimer = 145 --roughly 3 seconds
+			soundJingleVolume = false
+		end
+		id = -1 --musicmgr skips track 1, plays track 2
+	end
+	
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
 	if id and id > 0 then
+		--NOTE: which tracks are considered jingles is based on the track BEFORE replacement
+		--for example, anything that replaces a boss over jingle is considered a jingle
+		--but if a boss over jingle replaces a stage track, it is not considered a jingle
+		--IMPORTANT: replaced jingles can have different length, so if the callback function does not return a length, do not run special jingle code
+		--NOTE: the intention is that if a function does not return jingleinfo, then the code runs like normal with no issues
+		if musicJingles[track] and (jingleinfo or track == id) then --if we replaced this jingle and didn't provide length, don't run jingle-specific code
+			--Isaac.DebugString("running music jingle code for track "..tostring(track))
+			--Isaac.DebugString("jingleinfo found to be "..tostring(jingleinfo))
+			if jingleinfo then
+				musicJingles[track]["timeleft"] = jingleinfo
+			else
+				musicJingles[track]["timeleft"] = musicJingles[track]["length"]
+			end
+			musicJingles[track]["nexttrack"] = track2
+			id2 = 0 --don't queue because we are going to play in the MC_POST_RENDER function
+		end
+		
 		if musicmgr:GetCurrentMusicID() ~= id then
 			musicmgr:Play(correctedTrackNum(id),1)
-			musicmgr:UpdateVolume()
+			if not soundJingleVolume then
+				musicmgr:UpdateVolume()
+			end
 		end
 	elseif id == 0 then
 		return
@@ -633,7 +736,9 @@ function musicPlay(track, track2)
 			end
 			if replacedtrack2 then
 				musicmgr:Play(correctedTrackNum(id2),1)
-				musicmgr:UpdateVolume()
+				if not soundJingleVolume then
+					musicmgr:UpdateVolume()
+				end
 			else
 				musicPlay(id2)
 			end
@@ -728,7 +833,24 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.Up
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.LoadSaveData)
 
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function() --this function kicks off the Game Start Jingle countdown
+	local currentMusicId = musicmgr:GetCurrentMusicID()
+	if currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT then
+		musicJingles[currentMusicId]["timeleft"] = musicJingles[currentMusicId]["length"]
+		
+		local room = Game():GetRoom()
+		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
+			musicJingles[currentMusicId]["nexttrack"] = getBossMusic()
+		else
+			musicJingles[currentMusicId]["nexttrack"] = getMusicTrack()
+		end
+	end
+end)
+
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_END, function(isGameOver)
+	for i,v in pairs(musicJingles) do
+		v["timeleft"] = 0
+	end
 	if isGameOver then
 		musicCrossfade(Music.MUSIC_JINGLE_GAME_OVER, Music.MUSIC_GAME_OVER)
 	end
@@ -737,6 +859,7 @@ end)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
 		local room = Game():GetRoom()
+		local roomtype = room:GetType()
 		
 		local previousinmirrorroom = modSaveData["inmirrorroom"]
 		modSaveData["inmirrorroom"] = false
@@ -775,19 +898,52 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 			modSaveData["inmineshaft"] = (not modSaveData["inmineshaft"])
 		end
 		
-		--NOTE: moved this below the door loop because we need to play Mirror Music immediately, and getMusicTrack() does not use doorprevstates
 		if not waitingforgamestjingle then
-			musicCrossfade(getMusicTrack())
+			--if we need to, we can stop music from playing in a new room
+			local skipCrossfade = false
+			
+			if modSaveData["inmineshaft"] and musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] > 0 then
+				skipCrossfade = true
+			else
+				musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] = 0
+			end
+			
+			--NOTE: the room:IsClear() check handles back-to-back Bosses (i.e. XL floors)
+			if (roomtype == (RoomType.ROOM_SECRET_EXIT or 27) or roomtype == RoomType.ROOM_BOSS) and room:IsClear() and (musicJingles[Music.MUSIC_JINGLE_BOSS_OVER]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3]["timeleft"] > 0) then
+				--Isaac.DebugString("skipping crossfade for Boss Room or Secret Exit Room")
+				skipCrossfade = true
+			else
+				musicJingles[Music.MUSIC_JINGLE_BOSS_OVER]["timeleft"] = 0
+				musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2]["timeleft"] = 0
+				musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3]["timeleft"] = 0
+			end
+			
+			if not skipCrossfade then
+				musicCrossfade(getMusicTrack())
+			end
 		end
 		
 		if usernolayers or MMC.DisableMusicLayers then
 			musicmgr:DisableLayer()
 		end
 		
-		-- if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() then
-			-- treasure_jingle_timer = 180
-			-- treasure_volume = false
-		-- end
+		--NOTE: moved treasure/sound jingle initalization to musicPlay
+		
+		--moved from getMusicTrack to here so we can use musicPlay instead of musicCrossfade
+		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or Game():GetLevel():GetStage() ~= LevelStage.STAGE4_3) then
+			local rng = math.random(0,3)
+			local treasurejingle
+			if rng == 0 then
+				treasurejingle = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_0
+			elseif rng == 1 then
+				treasurejingle = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_1
+			elseif rng == 2 then
+				treasurejingle = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2
+			elseif rng == 3 then
+				treasurejingle = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3
+			end
+			musicPlay(treasurejingle, getStageMusic())
+		end
 	end
 end)
 
@@ -816,6 +972,11 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	satanfightstage = 0
 	hadphotobefore = false
 	foundknifepiecebefore = false
+	
+	for i,v in pairs(musicJingles) do
+		v["timeleft"] = 0
+	end
+	
 	Isaac.SaveModData(MusicModCallback, json.encode(modSaveData))
 end)
 
@@ -850,18 +1011,35 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	local currentMusicId = musicmgr:GetCurrentMusicID()
 	local ispaused = Game():IsPaused()
 	
+	for i,v in pairs(musicJingles) do
+		if v["timeleft"] > 0 then
+			v["timeleft"] = v["timeleft"] - 1
+			if v["timeleft"] == 0 then
+				--Isaac.DebugString("music jingle "..tostring(i).." ended")
+				if v["gamestart"] then
+					waitingforgamestjingle = false
+				end
+				if v["nexttrack"] then
+					--Isaac.DebugString("nexttrack found to be "..tostring(v["nexttrack"]))
+					musicCrossfade(v["nexttrack"])
+				else --failsafe for game start jingles, but nexttrack should be set for those, too
+					if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
+						musicCrossfade(getBossMusic())
+					else
+						musicCrossfade(getMusicTrack())
+					end
+				end
+				return
+			end
+		end
+	end
+	
 	if room:GetFrameCount() < 10 and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
 		waitingforgamestjingle = true
 	end
 	
-	--play music even if pause within first 10 frames (except on frame zero)
-	if ispaused and room:GetFrameCount() > 0 and (currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT) then
-		currentMusicId = 0
-	end
-	
-	--if starting from menu, wait for start jingle to end 
 	--upon reset, play new music immediately
-	if waitingforgamestjingle and (room:GetFrameCount() > 10 or (currentMusicId ~= Music.MUSIC_JINGLE_GAME_START and currentMusicId ~= Music.MUSIC_JINGLE_GAME_START_ALT)) then
+	if waitingforgamestjingle and (currentMusicId ~= Music.MUSIC_JINGLE_GAME_START and currentMusicId ~= Music.MUSIC_JINGLE_GAME_START_ALT) then
 		waitingforgamestjingle = false
 		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
 			musicCrossfade(getBossMusic())
@@ -871,19 +1049,22 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		return
 	end
 	
-	-- if treasure_jingle_timer then
-		-- if treasure_jingle_timer > 0 then
-			-- if not treasure_volume then
-				-- musicmgr:VolumeSlide(0.1)
-				-- treasure_volume = true
-			-- end
-			-- treasure_jingle_timer = treasure_jingle_timer - 1
-		-- else
-			-- treasure_jingle_timer = nil
-			-- treasure_volume = false
-			-- musicmgr:VolumeSlide(1)
-		-- end	
-	-- end
+	--renamed treasure_jingle_timer and treasure_volume
+	if soundJingleTimer then
+		if soundJingleTimer > 0 then
+			if not soundJingleVolume then
+				--Isaac.DebugString("sliding volume down because sound jingle is playing")
+				musicmgr:VolumeSlide(0.1, 0.05)
+				soundJingleVolume = true
+			end
+			soundJingleTimer = soundJingleTimer - 1
+		else
+			soundJingleTimer = nil
+			soundJingleVolume = false
+			musicmgr:VolumeSlide(1, 0.05)
+			--Isaac.DebugString("sliding volume up because sound jingle ended")
+		end
+	end
 	
 	--Angel Statue fight and minibosses; works for Normal and Greed Mode
 	if room:GetType() == RoomType.ROOM_ANGEL then
@@ -941,7 +1122,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 							end
 						end
 					end
-				else
+				else --the room right before Ultra Greed's room
 					if currentbosscount > 0 and previousbosscount == 0 then
 						musicCrossfade(getGenericBossMusic())
 					end
@@ -985,7 +1166,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		end
 		
 		previousgreedwave = currentgreedwave
-	else
+	else --Normal or Hard Mode (i.e. not Greed Mode)
 		if room:GetType() == RoomType.ROOM_CHALLENGE or room:GetType() == RoomType.ROOM_BOSSRUSH then
 			--for some reason boss rush music wasnt being triggered here
 			--but was working fine in getMusicTrack()
