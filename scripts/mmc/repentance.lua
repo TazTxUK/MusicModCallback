@@ -300,10 +300,10 @@ soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2] = {
 soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3] = {
 	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 4")
 }
-soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
+soundJingles[Music.MUSIC_JINGLE_SECRETROOM_FIND] = {
 	["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Secret Room Jingle")
 }
-soundJingles[Music.MUSIC_JINGLE_SECRETROOM_FIND] = {
+soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
 	["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Strange Door Jingle")
 }
 --]]
@@ -631,7 +631,7 @@ function musicCrossfade(track, track2)
 		--but if a boss over jingle replaces a stage track, it is not considered a jingle
 		--IMPORTANT: replaced jingles can have different length, so if the callback function does not return a length, do not run special jingle code
 		--NOTE: the intention is that if a function does not return jinglelength, then the code runs like normal with no issues
-		if musicJingles[track] and (jinglelength or track == id) then --if we replaced this jingle and didn't provide length, don't run jingle-specific code
+		if not Game():IsGreedMode() and musicJingles[track] and (jinglelength or track == id) then --if we replaced this jingle and didn't provide length, don't run jingle-specific code
 			--Isaac.DebugString("running music jingle code for track "..tostring(track))
 			--Isaac.DebugString("jinglelength found to be "..tostring(jinglelength))
 			if jinglelength then
@@ -706,7 +706,7 @@ function musicPlay(track, track2)
 		--but if a boss over jingle replaces a stage track, it is not considered a jingle
 		--IMPORTANT: replaced jingles can have different length, so if the callback function does not return a length, do not run special jingle code
 		--NOTE: the intention is that if a function does not return jingleinfo, then the code runs like normal with no issues
-		if musicJingles[track] and (jingleinfo or track == id) then --if we replaced this jingle and didn't provide length, don't run jingle-specific code
+		if not Game():IsGreedMode() and musicJingles[track] and (jingleinfo or track == id) then --if we replaced this jingle and didn't provide length, don't run jingle-specific code
 			--Isaac.DebugString("running music jingle code for track "..tostring(track))
 			--Isaac.DebugString("jingleinfo found to be "..tostring(jingleinfo))
 			if jingleinfo then
