@@ -842,7 +842,9 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function() --thi
 		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
 			musicJingles[currentMusicId]["nexttrack"] = getBossMusic()
 		else
+			waitingforgamestjingle = false --trick getMusicTrack into giving us the track early
 			musicJingles[currentMusicId]["nexttrack"] = getMusicTrack()
+			waitingforgamestjingle = true --Cyber: "This may not be good code, but I don't want to interfere with the check that Nato added to the beginning of getMusicTrack because I figure it is important for the Soundtrack Menu."
 		end
 	end
 end)
