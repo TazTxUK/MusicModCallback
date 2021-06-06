@@ -890,6 +890,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		local room = Game():GetRoom()
 		local roomtype = room:GetType()
 		local level = Game():GetLevel()
+		local ascent = Game():GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and level:GetStage() <= 6
 		
 		local previousinmirrorroom = modSaveData["inmirrorroom"]
 		modSaveData["inmirrorroom"] = false
@@ -983,7 +984,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		--NOTE: moved treasure/sound jingle initalization to musicPlay
 		
 		--moved from getMusicTrack to here so we can use musicPlay instead of musicCrossfade
-		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) and not modSaveData["inmirroredworld"] then
+		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) and not modSaveData["inmirroredworld"] and not ascent then
 			local rng = math.random(0,3)
 			local treasurejingle
 			if rng == 0 then
