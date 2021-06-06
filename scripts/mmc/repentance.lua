@@ -932,7 +932,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		--NOTE: moved treasure/sound jingle initalization to musicPlay
 		
 		--moved from getMusicTrack to here so we can use musicPlay instead of musicCrossfade
-		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or Game():GetLevel():GetStage() ~= LevelStage.STAGE4_3) then
+		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or Game():GetLevel():GetStage() ~= LevelStage.STAGE4_3) and not modSaveData["inmirroredworld"] then
 			local rng = math.random(0,3)
 			local treasurejingle
 			if rng == 0 then
