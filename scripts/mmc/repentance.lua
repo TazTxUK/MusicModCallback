@@ -244,7 +244,7 @@ local waitingforgamestjingle = true
 local satanfightstage = 0
 local doorprevstates = {}
 local inbadstage = false
-local strangedoorstatebefore = DoorState.STATE_INIT---
+local strangedoorstatebefore = DoorState.STATE_INIT
 local foundknifepiecebefore = false
 
 --this table is only for the start jingles, and for unlooped tracks that, under specific circumstances, need to continue playing upon entering a new room and retain the queued track
@@ -369,7 +369,6 @@ else
 end
 
 local function resetModSaveData(resetLayerSetting)
-	Isaac.DebugString("resetModSaveData")
 	if resetLayerSetting then
 		modSaveData["usernolayers"] = false
 	end
@@ -844,7 +843,7 @@ function MusicModCallback:LoadSaveData(isContinued)
 		modSaveData["secretjingles"] = (modSaveData["secretjingles"] or {})
 		modSaveData["railbuttons"] = (modSaveData["railbuttons"] or {})
 		
-		if not isContinued then --when starting a new run, of course we are not in mirror room or mirrored world!
+		if not isContinued then --when starting a new run, most data will be reset
 			resetModSaveData(false) --does not reset layer setting
 		end
 	else
