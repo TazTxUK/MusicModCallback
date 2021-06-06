@@ -205,7 +205,7 @@ chapter_music[LevelStage.STAGE7] = {
 
 chapter_music[LevelStage.STAGE8] = {
 	[StageType.STAGETYPE_ORIGINAL] = Music.MUSIC_ISAACS_HOUSE,
-	[StageType.STAGETYPE_WOTL] = Music.MUSIC_DARK_CLOSET,
+	[StageType.STAGETYPE_WOTL] = Music.MUSIC_ISAACS_HOUSE,
 }
 
 chapter_music_greed[LevelStage.STAGE1_GREED] = chapter_music[LevelStage.STAGE1_1]
@@ -244,7 +244,7 @@ local waitingforgamestjingle = true
 local satanfightstage = 0
 local doorprevstates = {}
 local inbadstage = false
-local hadphotobefore = false
+local strangedoorstatebefore = DoorState.STATE_INIT---
 local foundknifepiecebefore = false
 
 --this table is only for the start jingles, and for unlooped tracks that, under specific circumstances, need to continue playing upon entering a new room and retain the queued track
@@ -368,6 +368,36 @@ else
 	modSaveData["usernolayers"] = false
 end
 
+local function resetModSaveData(resetLayerSetting)
+	Isaac.DebugString("resetModSaveData")
+	if resetLayerSetting then
+		modSaveData["usernolayers"] = false
+	end
+	
+	modSaveData["inmirrorroom"] = false
+	modSaveData["inmirroredworld"] = false
+	modSaveData["inmineroom"] = false
+	modSaveData["inmineshaft"] = false
+	modSaveData["railcomplete"] = false
+	modSaveData["darkhome"] = 0
+	
+	if modSaveData["secretjingles"] then
+		for i,v in pairs(modSaveData["secretjingles"]) do
+			modSaveData["secretjingles"][i] = nil
+		end
+	else
+		modSaveData["secretjingles"] = {}
+	end
+	
+	if modSaveData["railbuttons"] then
+		for i,v in pairs(modSaveData["railbuttons"]) do
+			modSaveData["railbuttons"][i] = nil
+		end
+	else
+		modSaveData["railbuttons"] = {}
+	end
+end
+
 local function getChapterMusic(floor_type, floor_variant, greed)
 	local music_table = greed and chapter_music_greed or chapter_music
 	local chapter = music_table[floor_type] or chapter_music_default
@@ -478,6 +508,10 @@ local function getMusicTrack()
 		else
 			return Music.MUSIC_MINESHAFT_AMBIENT
 		end
+	elseif modSaveData["darkhome"] == 3 then
+		return Music.MUSIC_DOGMA_BOSS
+	elseif modSaveData["darkhome"] == 4 then
+		return Music.MUSIC_BEAST_BOSS
 	end
 	
 	if ascent then
@@ -805,27 +839,21 @@ function MusicModCallback:LoadSaveData(isContinued)
 		modSaveData["inmirroredworld"] = (modSaveData["inmirroredworld"] or false)
 		modSaveData["inmineroom"] = (modSaveData["inmineroom"] or false)
 		modSaveData["inmineshaft"] = (modSaveData["inmineshaft"] or false)
+		modSaveData["railcomplete"] = (modSaveData["railcomplete"] or false)
+		modSaveData["darkhome"] = (modSaveData["darkhome"] or 0)
+		modSaveData["secretjingles"] = (modSaveData["secretjingles"] or {})
+		modSaveData["railbuttons"] = (modSaveData["railbuttons"] or {})
 		
 		if not isContinued then --when starting a new run, of course we are not in mirror room or mirrored world!
-			modSaveData["inmirrorroom"] = false
-			modSaveData["inmirroredworld"] = false
-			modSaveData["inmineroom"] = false
-			modSaveData["inmineshaft"] = false
+			resetModSaveData(false) --does not reset layer setting
 		end
 	else
-		modSaveData["usernolayers"] = false
-		modSaveData["inmirrorroom"] = false
-		modSaveData["inmirroredworld"] = false
-		modSaveData["inmineroom"] = false
-		modSaveData["inmineshaft"] = false
+		resetModSaveData(true) --resets layer setting
 	end
 end
 
 function MusicModCallback:UpdateSaveValuesForNewFloor()
-	modSaveData["inmirrorroom"] = false
-	modSaveData["inmirroredworld"] = false
-	modSaveData["inmineroom"] = false
-	modSaveData["inmineshaft"] = false
+	resetModSaveData(false) --does not reset layer setting
 end
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
@@ -862,6 +890,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
 		local room = Game():GetRoom()
 		local roomtype = room:GetType()
+		local level = Game():GetLevel()
 		
 		local previousinmirrorroom = modSaveData["inmirrorroom"]
 		modSaveData["inmirrorroom"] = false
@@ -886,6 +915,21 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 					modSaveData["inmirrorroom"] = true
 				elseif door.TargetRoomIndex == -101 then --the door to the Mineshaft
 					modSaveData["inmineroom"] = true
+				end
+			end
+		end
+		
+		--initialize MINES/ASHPIT II RAIL BUTTONS upon discovery
+		if not modSaveData["railcomplete"] and level:GetStage() == LevelStage.STAGE2_2 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+			for i = 1, room:GetGridSize() do
+				local gridentity = room:GetGridEntity(i)
+				if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
+					--found a rail button
+					local roomidx = level:GetCurrentRoomDesc().SafeGridIndex
+					if modSaveData["railbuttons"][tostring(roomidx)] == nil then
+						modSaveData["railbuttons"][tostring(roomidx)] = false
+					end
+					break
 				end
 			end
 		end
@@ -923,6 +967,14 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 			if not skipCrossfade then
 				musicCrossfade(getMusicTrack())
 			end
+		else
+			--if we change rooms while waiting for game start jingle, update "nexttrack"
+			local currentMusicId = musicmgr:GetCurrentMusicID()
+			if musicJingles[currentMusicId] and musicJingles[currentMusicId]["timeleft"] > 0 then
+				waitingforgamestjingle = false --trick getMusicTrack into giving us the track early
+				musicJingles[currentMusicId]["nexttrack"] = getMusicTrack()
+				waitingforgamestjingle = true
+			end
 		end
 		
 		if usernolayers or MMC.DisableMusicLayers then
@@ -932,7 +984,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		--NOTE: moved treasure/sound jingle initalization to musicPlay
 		
 		--moved from getMusicTrack to here so we can use musicPlay instead of musicCrossfade
-		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or Game():GetLevel():GetStage() ~= LevelStage.STAGE4_3) and not modSaveData["inmirroredworld"] then
+		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) and not modSaveData["inmirroredworld"] then
 			local rng = math.random(0,3)
 			local treasurejingle
 			if rng == 0 then
@@ -958,8 +1010,10 @@ end, EntityType.ENTITY_ISAAC)
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_ENTITY_SPAWN,
 function(self, type, variant, subtype, position, velocity, spawner, seed)
 	if type == EntityType.ENTITY_DOGMA and variant == 1 then
+		modSaveData["darkhome"] = 3
 		musicCrossfade(Music.MUSIC_DOGMA_INTRO, Music.MUSIC_DOGMA_BOSS)
 	elseif type == EntityType.ENTITY_BEAST then
+		modSaveData["darkhome"] = 4
 		musicCrossfade(Music.MUSIC_BEAST_BOSS)
 	end
 end)
@@ -972,7 +1026,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	previousgreedwave = 0
 	previousbosscount = 0
 	satanfightstage = 0
-	hadphotobefore = false
+	strangedoorstatebefore = DoorState.STATE_INIT
 	foundknifepiecebefore = false
 	
 	for i,v in pairs(musicJingles) do
@@ -1231,15 +1285,13 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		elseif level:GetStage() == LevelStage.STAGE3_2 and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
 			local topDoor = room:GetDoor(DoorSlot.UP0)
 			if topDoor and topDoor.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
-				local player = Game():GetPlayer(0)
-				local havephotonow = (player:HasCollectible(CollectibleType.COLLECTIBLE_POLAROID,true) or player:HasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE,true))
+				local strangedoorstatenow = topDoor.State
 				
-				--TODO: The Faded Polaroid trinket can be used instead
-				if hadphotobefore and not havephotonow then
+				if strangedoorstatebefore == DoorState.STATE_CLOSED and strangedoorstatenow == DoorState.STATE_OPEN then
 					musicPlay(Music.MUSIC_STRANGE_DOOR_JINGLE, getMusicTrack())
 				end
 				
-				hadphotobefore = havephotonow
+				strangedoorstatebefore = strangedoorstatenow
 			end
 		elseif modSaveData["inmineshaft"] then
 			local foundknifepiecenow
@@ -1259,13 +1311,61 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		end
 	end
 	
+	--PLAY TWISTED HOME MUSIC AFTER SLEEPING IN MOM'S BED
+	if level:GetStage() == LevelStage.STAGE8 then
+		if modSaveData["darkhome"] == 0 and currentMusicId == Music.MUSIC_JINGLE_NIGHTMARE_ALT then
+			modSaveData["darkhome"] = 1
+		end
+		if modSaveData["darkhome"] == 1 and currentMusicId == Music.MUSIC_JINGLE_NIGHTMARE_ALT and Game():GetHUD():IsVisible() then
+			musicPlay(Music.MUSIC_ISAACS_HOUSE)
+			modSaveData["darkhome"] = 2
+		end
+		if modSaveData["darkhome"] == 2 then
+			if not musicmgr:IsLayerEnabled() then
+				musicmgr:EnableLayer()
+			end
+		end
+		--darkhome sets to 3 when Dogma spawns
+		--darkhome sets to 4 when Beast spawns
+	end
+	
+	--MINES/ASHPIT II RAIL BUTTONS
+	if not modSaveData["railcomplete"] and level:GetStage() == LevelStage.STAGE2_2 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+		for i = 1, room:GetGridSize() do
+			local gridentity = room:GetGridEntity(i)
+			if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
+				--found a rail button (variant 3)
+				local railbuttonpressednow = (gridentity.State == 3) --State 3 is pressed
+				local roomidx = level:GetCurrentRoomDesc().SafeGridIndex
+				if railbuttonpressednow and not modSaveData["railbuttons"][tostring(roomidx)] then
+					modSaveData["railbuttons"][tostring(roomidx)] = true
+					
+					--now check if this is the third button pressed
+					local numrailbuttonspressed = 0
+					for j,v in pairs(modSaveData["railbuttons"]) do
+						if v then
+							numrailbuttonspressed = numrailbuttonspressed + 1
+						end
+					end
+					
+					if numrailbuttonspressed == 3 then
+						musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
+						modSaveData["railcomplete"] = true
+					end
+				end
+				break
+			end
+		end
+	end
+	
 	--SECRET ROOM DOORS
 	for i=0,7 do
 		local door = room:GetDoor(i)
 		if door then
 			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
 				if door.State == 2 and doorprevstates[i] == 1 then
-					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
+					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and not modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] then
+						modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] = true
 						musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
 					end
 				end
