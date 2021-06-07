@@ -507,7 +507,7 @@ local function getMusicTrack()
 		else
 			return Music.MUSIC_MINESHAFT_AMBIENT
 		end
-	elseif modSaveData["darkhome"] == 4 and stage == LevelStage.STAGE8 and roomidx == 109 then-- Dogma fighting and in Dogma room
+	elseif modSaveData["darkhome"] == 4 and stage == LevelStage.STAGE8 and room:GetRoomShape() == RoomShape.ROOMSHAPE_1x2 then-- Dogma fighting and in Dogma room
 		return Music.MUSIC_DOGMA_BOSS
 	end
 	
