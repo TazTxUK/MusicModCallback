@@ -1361,7 +1361,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	for i=0,7 do
 		local door = room:GetDoor(i)
 		if door then
-			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
+			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET or door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
 				if door.State == 2 and doorprevstates[i] == 1 then
 					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and not modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] then
 						modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] = true
