@@ -507,10 +507,8 @@ local function getMusicTrack()
 		else
 			return Music.MUSIC_MINESHAFT_AMBIENT
 		end
-	elseif modSaveData["darkhome"] == 3 then
+	elseif modSaveData["darkhome"] == 4 and stage == LevelStage.STAGE8 and roomidx == 109 then-- Dogma fighting and in Dogma room
 		return Music.MUSIC_DOGMA_BOSS
-	elseif modSaveData["darkhome"] == 4 then
-		return Music.MUSIC_BEAST_BOSS
 	end
 	
 	if ascent then
@@ -584,7 +582,7 @@ local function getMusicTrack()
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
 	elseif roomtype == (RoomType.ROOM_SECRET_EXIT or 27) then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
 		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
-	elseif roomidx == -10 then
+	elseif roomtype == RoomType.ROOM_DUNGEON and stage == LevelStage.STAGE8 and roomidx == -10 then
 		return Music.MUSIC_BEAST_BOSS
 	elseif roomidx == -14 then
 		return getGenericBossMusic()
@@ -592,9 +590,7 @@ local function getMusicTrack()
 		return getGenericBossMusic()
 	else
 		return getStageMusic()
-	end
-	
-	-- ROOM_DUNGEON 	
+	end	
 end
 
 function addMusicCallback(ref, func, ...)
@@ -1007,16 +1003,10 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent)
 	end
 end, EntityType.ENTITY_ISAAC)
 
-MusicModCallback:AddCallback(ModCallbacks.MC_PRE_ENTITY_SPAWN,
-function(self, type, variant, subtype, position, velocity, spawner, seed)
-	if type == EntityType.ENTITY_DOGMA and variant == 1 then
-		modSaveData["darkhome"] = 3
-		musicCrossfade(Music.MUSIC_DOGMA_INTRO, Music.MUSIC_DOGMA_BOSS)
-	elseif type == EntityType.ENTITY_BEAST then
-		modSaveData["darkhome"] = 4
-		musicCrossfade(Music.MUSIC_BEAST_BOSS)
-	end
-end)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
+	musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER) --TODO: this plays later than it should
+	modSaveData["darkhome"] = 5
+end, EntityType.ENTITY_DOGMA)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	waitingforgamestjingle = true
@@ -1320,13 +1310,25 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			musicPlay(Music.MUSIC_ISAACS_HOUSE)
 			modSaveData["darkhome"] = 2
 		end
-		if modSaveData["darkhome"] == 2 then
+		if modSaveData["darkhome"] >= 2 and room:IsClear() then
 			if not musicmgr:IsLayerEnabled() then
 				musicmgr:EnableLayer()
 			end
 		end
-		--darkhome sets to 3 when Dogma spawns
-		--darkhome sets to 4 when Beast spawns
+		if modSaveData["darkhome"] == 2 then
+			if room:GetRoomShape() == RoomShape.ROOMSHAPE_1x2 then
+				local leftDoor = room:GetDoor(DoorSlot.LEFT0)
+				if leftDoor and leftDoor.State == DoorState.STATE_CLOSED then
+					modSaveData["darkhome"] = 3
+					musicCrossfade(Music.MUSIC_DOGMA_INTRO)
+				end
+			end
+		end
+		if modSaveData["darkhome"] == 3 and Game():GetHUD():IsVisible() then
+			musicPlay(Music.MUSIC_DOGMA_BOSS)
+			modSaveData["darkhome"] = 4
+		end
+		--darkhome is set to 5 after killing Dogma
 	end
 	
 	--MINES/ASHPIT II RAIL BUTTONS
