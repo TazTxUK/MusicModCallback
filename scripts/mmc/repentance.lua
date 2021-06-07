@@ -352,27 +352,7 @@ setmetatable(weakmusicmgrfuncs, overridemusicmgrfuncs)
 --it seems that if this code runs on game start, it only looks at save file 1
 --it will look at the correct save file after enabling the mod from the Mod menu of a particular save file
 --nonetheless, I think we should load this info again upon starting or continuing a run
-if Isaac.HasModData(MusicModCallback) then
-	local dat = Isaac.LoadModData(MusicModCallback)
-	--handles legacy data system
-	if dat == "0" then
-		usernolayers = true
-	elseif dat == "1" then
-		usernolayers = false
-	else
-		modSaveData = json.decode(dat)
-		usernolayers = (modSaveData["usernolayers"] or false)
-	end
-	modSaveData["usernolayers"] = usernolayers
-else
-	modSaveData["usernolayers"] = false
-end
-
-local function resetModSaveData(resetLayerSetting)
-	if resetLayerSetting then
-		modSaveData["usernolayers"] = false
-	end
-	
+function MMC.ResetSave()
 	modSaveData["inmirrorroom"] = false
 	modSaveData["inmirroredworld"] = false
 	modSaveData["inmineroom"] = false
@@ -380,20 +360,22 @@ local function resetModSaveData(resetLayerSetting)
 	modSaveData["railcomplete"] = false
 	modSaveData["darkhome"] = 0
 	
-	if modSaveData["secretjingles"] then
-		for i,v in pairs(modSaveData["secretjingles"]) do
-			modSaveData["secretjingles"][i] = nil
+	modSaveData["secretjingles"] = {}
+	modSaveData["railbuttons"] = {}
+end
+
+function MMC.LoadSave()
+	local success = pcall(function()
+		if Isaac.HasModData(MusicModCallback) then
+			local dat = Isaac.LoadModData(MusicModCallback)
+			modSaveData = json.decode(dat)
+			usernolayers = modSaveData["usernolayers"]
+		else
+			modSaveData["usernolayers"] = false
 		end
-	else
-		modSaveData["secretjingles"] = {}
-	end
-	
-	if modSaveData["railbuttons"] then
-		for i,v in pairs(modSaveData["railbuttons"]) do
-			modSaveData["railbuttons"][i] = nil
-		end
-	else
-		modSaveData["railbuttons"] = {}
+	end)
+	if not success then
+		MMC.ResetSave()
 	end
 end
 
@@ -816,39 +798,11 @@ end
 
 function MusicModCallback:LoadSaveData(isContinued)
 	--run this when we start a game so we get the correct data for this save file
-	if Isaac.HasModData(MusicModCallback) then
-		local dat = Isaac.LoadModData(MusicModCallback)
-		
-		--handles legacy data system
-		if dat == "0" then
-			usernolayers = true
-		elseif dat == "1" then
-			usernolayers = false
-		else
-			modSaveData = json.decode(dat)
-			usernolayers = (modSaveData["usernolayers"] or false)
-		end
-		
-		modSaveData["usernolayers"] = usernolayers
-		modSaveData["inmirrorroom"] = (modSaveData["inmirrorroom"] or false)
-		modSaveData["inmirroredworld"] = (modSaveData["inmirroredworld"] or false)
-		modSaveData["inmineroom"] = (modSaveData["inmineroom"] or false)
-		modSaveData["inmineshaft"] = (modSaveData["inmineshaft"] or false)
-		modSaveData["railcomplete"] = (modSaveData["railcomplete"] or false)
-		modSaveData["darkhome"] = (modSaveData["darkhome"] or 0)
-		modSaveData["secretjingles"] = (modSaveData["secretjingles"] or {})
-		modSaveData["railbuttons"] = (modSaveData["railbuttons"] or {})
-		
-		if not isContinued then --when starting a new run, most data will be reset
-			resetModSaveData(false) --does not reset layer setting
-		end
-	else
-		resetModSaveData(true) --resets layer setting
-	end
+	MMC.LoadSave()
 end
 
 function MusicModCallback:UpdateSaveValuesForNewFloor()
-	resetModSaveData(false) --does not reset layer setting
+	MMC.ResetSave()
 end
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
