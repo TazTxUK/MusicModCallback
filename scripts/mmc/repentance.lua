@@ -1368,7 +1368,12 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				if door.State == 2 and doorprevstates[i] == 1 then
 					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and not modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] then
 						modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] = true
-						musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
+						local player = Isaac.GetPlayer()
+						local icanseeforever = level:GetCanSeeEverything()
+						local xrayvision = player:HasCollectible(CollectibleType.COLLECTIBLE_XRAY_VISION)
+						if not icanseeforever and not xrayvision then
+							musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
+						end
 					end
 				end
 			end
