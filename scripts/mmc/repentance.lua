@@ -1325,7 +1325,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 						local player = Isaac.GetPlayer()
 						local icanseeforever = level:GetCanSeeEverything()
 						local xrayvision = player:HasCollectible(CollectibleType.COLLECTIBLE_XRAY_VISION)
-						if not icanseeforever and not xrayvision then
+						if (not icanseeforever and not xrayvision) or door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
 							musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
 						end
 					end
