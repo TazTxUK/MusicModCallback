@@ -798,7 +798,11 @@ end
 
 function MusicModCallback:LoadSaveData(isContinued)
 	--run this when we start a game so we get the correct data for this save file
-	MMC.LoadSave()
+	if isContinued then
+		MMC.LoadSave()
+	else
+		MMC.ResetSave()
+	end
 end
 
 function MusicModCallback:UpdateSaveValuesForNewFloor()
