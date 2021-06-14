@@ -981,6 +981,32 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
 	modSaveData["darkhome"] = 5
 end, EntityType.ENTITY_DOGMA)
 
+--handle Angel Statue fights
+function MusicModCallback:StartAngelFight()
+	local room = Game():GetRoom()
+	local roomtype = room:GetType()
+	
+	if roomtype == RoomType.ROOM_ANGEL or roomtype == RoomType.ROOM_SUPERSECRET then
+		musicCrossfade(getGenericBossMusic())
+	end
+end
+
+function MusicModCallback:EndAngelFight()
+	local room = Game():GetRoom()
+	local roomtype = room:GetType()
+	
+	if roomtype == RoomType.ROOM_ANGEL or roomtype == RoomType.ROOM_SUPERSECRET then
+		musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+	end
+end
+
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_INIT, MusicModCallback.StartAngelFight, EntityType.ENTITY_URIEL)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_INIT, MusicModCallback.StartAngelFight, EntityType.ENTITY_GABRIEL)
+
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.EndAngelFight, EntityType.ENTITY_URIEL)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.EndAngelFight, EntityType.ENTITY_GABRIEL)
+--end Angel Statue fight functions
+
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	waitingforgamestjingle = true
 	roomclearbefore = false
@@ -1085,20 +1111,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		end
 	end
 	
-	--Angel Statue fight and minibosses; works for Normal and Greed Mode
-	if room:GetType() == RoomType.ROOM_ANGEL then
-		if roomclearbefore and not roomclearnow then
-			musicCrossfade(getGenericBossMusic())
-		elseif roomclearnow and not roomclearbefore then
-			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
-		end
-	elseif room:GetType() == RoomType.ROOM_SUPERSECRET then
-		if roomclearbefore and not roomclearnow then
-			musicCrossfade(getGenericBossMusic())
-		elseif roomclearnow and not roomclearbefore then
-			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
-		end
-	elseif room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
+	if room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 		local currentbosscount = Isaac.CountBosses()
 		
 		if currentbosscount == 0 and previousbosscount > 0 then
