@@ -385,11 +385,26 @@ local function getChapterMusic(floor_type, floor_variant, greed)
 	return chapter[floor_variant] or chapter[StageType.STAGETYPE_ORIGINAL] or Music.MUSIC_TITLE_REPENTANCE
 end
 
+--check for death certificate
+local deathcertificateroom = false
+MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, function()
+	deathcertificateroom = true
+end, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE)
+
 local function getStageMusic()
 	local game = Game()
 	local level = game:GetLevel()
 	local stage = level:GetStage()
 	local stage_type = level:GetStageType()
+	--death certificate check
+	if deathcertificateroom then
+		local backdrop = Game():GetRoom():GetBackdropType()
+		if (backdrop > 48 and backdrop < 55) or backdrop == 60 then
+			return getChapterMusic(LevelStage.STAGE8, StageType.STAGETYPE_WOTL, game:IsGreedMode())
+		else
+			deathcertificateroom = false
+		end
+	end
 	return getChapterMusic(stage, stage_type, game:IsGreedMode())
 end
 
