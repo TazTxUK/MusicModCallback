@@ -1092,6 +1092,12 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		elseif roomclearnow and not roomclearbefore then
 			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
 		end
+	elseif room:GetType() == RoomType.ROOM_SUPERSECRET then
+		if roomclearbefore and not roomclearnow then
+			musicCrossfade(getGenericBossMusic())
+		elseif roomclearnow and not roomclearbefore then
+			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+		end
 	elseif room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 		local currentbosscount = Isaac.CountBosses()
 		
