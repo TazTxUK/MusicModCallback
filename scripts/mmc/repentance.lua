@@ -590,6 +590,10 @@ local function getMusicTrack()
 	end	
 end
 
+local function mirrorSoundIsPlaying()
+	return (SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_ENTER) or SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_EXIT))
+end
+
 function addMusicCallback(ref, func, ...)
 	assert(type(ref) == "table" and ref.Name, "Expected registered mod table for 1st argument, got "..type(ref))
 	assert(type(func) == "function", "Expected function for 2nd argument, got "..type(func))
@@ -649,6 +653,8 @@ function musicCrossfade(track, track2)
 	local id, id2, jinglelength = iterateThroughCallbacks(track, false)
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
+	local faderate = 0.08 --0.08 is default in MusicManager.Crossfade
+	if modSaveData["inmirrorroom"] and mirrorSoundIsPlaying() and Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE then faderate = 0.01 end
 	if not id then
 		return
 	elseif id > 0 then
@@ -669,7 +675,7 @@ function musicCrossfade(track, track2)
 			id2 = 0 --don't queue because we are going to play in the MC_POST_RENDER function
 		end
 		if musicmgr:GetCurrentMusicID() ~= id then
-			musicmgr:Crossfade(correctedTrackNum(id))
+			musicmgr:Crossfade(correctedTrackNum(id), faderate)
 		end
 		if id2 and id2 > 0 then
 			if replacedtrack2 then
@@ -687,7 +693,7 @@ function musicCrossfade(track, track2)
 				return
 			end
 			if replacedtrack2 then
-				musicmgr:Crossfade(correctedTrackNum(id2))
+				musicmgr:Crossfade(correctedTrackNum(id2), faderate)
 			else
 				musicCrossfade(id2, false)
 			end
@@ -905,7 +911,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		
 		if previousinmirrorroom and modSaveData["inmirrorroom"] then
 			--this isn't ideal, but I can't find a GameStateFlag or something similar for being in the mirrored world
-			if SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_ENTER) or SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_EXIT) then
+			if mirrorSoundIsPlaying() then
 				modSaveData["inmirroredworld"] = (not modSaveData["inmirroredworld"])
 			end
 		elseif previousinmineroom and modSaveData["inmineroom"] then
@@ -980,6 +986,32 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
 	musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER) --TODO: this plays later than it should
 	modSaveData["darkhome"] = 5
 end, EntityType.ENTITY_DOGMA)
+
+--handle Angel Statue fights
+function MusicModCallback:StartAngelFight()
+	local room = Game():GetRoom()
+	local roomtype = room:GetType()
+	
+	if roomtype == RoomType.ROOM_ANGEL or roomtype == RoomType.ROOM_SUPERSECRET then
+		musicCrossfade(getGenericBossMusic())
+	end
+end
+
+function MusicModCallback:EndAngelFight()
+	local room = Game():GetRoom()
+	local roomtype = room:GetType()
+	
+	if roomtype == RoomType.ROOM_ANGEL or roomtype == RoomType.ROOM_SUPERSECRET then
+		musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
+	end
+end
+
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_INIT, MusicModCallback.StartAngelFight, EntityType.ENTITY_URIEL)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_INIT, MusicModCallback.StartAngelFight, EntityType.ENTITY_GABRIEL)
+
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.EndAngelFight, EntityType.ENTITY_URIEL)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.EndAngelFight, EntityType.ENTITY_GABRIEL)
+--end Angel Statue fight functions
 
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	waitingforgamestjingle = true
@@ -1085,20 +1117,12 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		end
 	end
 	
-	--Angel Statue fight and minibosses; works for Normal and Greed Mode
-	if room:GetType() == RoomType.ROOM_ANGEL then
-		if roomclearbefore and not roomclearnow then
-			musicCrossfade(getGenericBossMusic())
-		elseif roomclearnow and not roomclearbefore then
-			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
-		end
-	elseif room:GetType() == RoomType.ROOM_SUPERSECRET then
-		if roomclearbefore and not roomclearnow then
-			musicCrossfade(getGenericBossMusic())
-		elseif roomclearnow and not roomclearbefore then
-			musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
-		end
-	elseif room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
+	--this is necessary for the music to play after Dream Catcher animations
+	if currentMusicId == Music.MUSIC_JINGLE_NIGHTMARE and Game():GetHUD():IsVisible() then
+		musicCrossfade(getStageMusic())
+	end
+	
+	if room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 		local currentbosscount = Isaac.CountBosses()
 		
 		if currentbosscount == 0 and previousbosscount > 0 then
