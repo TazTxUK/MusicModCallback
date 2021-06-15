@@ -590,6 +590,10 @@ local function getMusicTrack()
 	end	
 end
 
+local function mirrorSoundIsPlaying()
+	return (SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_ENTER) or SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_EXIT))
+end
+
 function addMusicCallback(ref, func, ...)
 	assert(type(ref) == "table" and ref.Name, "Expected registered mod table for 1st argument, got "..type(ref))
 	assert(type(func) == "function", "Expected function for 2nd argument, got "..type(func))
@@ -649,6 +653,8 @@ function musicCrossfade(track, track2)
 	local id, id2, jinglelength = iterateThroughCallbacks(track, false)
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
+	local faderate = 0.08 --0.08 is default in MusicManager.Crossfade
+	if modSaveData["inmirrorroom"] and mirrorSoundIsPlaying() and Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE then faderate = 0.01 end
 	if not id then
 		return
 	elseif id > 0 then
@@ -669,7 +675,7 @@ function musicCrossfade(track, track2)
 			id2 = 0 --don't queue because we are going to play in the MC_POST_RENDER function
 		end
 		if musicmgr:GetCurrentMusicID() ~= id then
-			musicmgr:Crossfade(correctedTrackNum(id))
+			musicmgr:Crossfade(correctedTrackNum(id), faderate)
 		end
 		if id2 and id2 > 0 then
 			if replacedtrack2 then
@@ -687,7 +693,7 @@ function musicCrossfade(track, track2)
 				return
 			end
 			if replacedtrack2 then
-				musicmgr:Crossfade(correctedTrackNum(id2))
+				musicmgr:Crossfade(correctedTrackNum(id2), faderate)
 			else
 				musicCrossfade(id2, false)
 			end
@@ -905,7 +911,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		
 		if previousinmirrorroom and modSaveData["inmirrorroom"] then
 			--this isn't ideal, but I can't find a GameStateFlag or something similar for being in the mirrored world
-			if SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_ENTER) or SFXManager():IsPlaying(SoundEffect.SOUND_MIRROR_EXIT) then
+			if mirrorSoundIsPlaying() then
 				modSaveData["inmirroredworld"] = (not modSaveData["inmirroredworld"])
 			end
 		elseif previousinmineroom and modSaveData["inmineroom"] then
