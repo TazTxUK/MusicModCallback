@@ -205,7 +205,7 @@ chapter_music[LevelStage.STAGE7] = {
 
 chapter_music[LevelStage.STAGE8] = {
 	[StageType.STAGETYPE_ORIGINAL] = Music.MUSIC_ISAACS_HOUSE,
-	[StageType.STAGETYPE_WOTL] = Music.MUSIC_DARK_CLOSET,
+	[StageType.STAGETYPE_WOTL] = Music.MUSIC_ISAACS_HOUSE,
 }
 
 chapter_music_greed[LevelStage.STAGE1_GREED] = chapter_music[LevelStage.STAGE1_1]
