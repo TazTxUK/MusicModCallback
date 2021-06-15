@@ -489,7 +489,7 @@ local function getMusicTrack()
 	local ascent = game:GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and stage <= 6
 	local inrepstage = stagetype == StageType.STAGETYPE_REPENTANCE or stagetype == StageType.STAGETYPE_REPENTANCE_B
 	
-	if modSaveData["inmirroredworld"] then
+	if modSaveData["inmirroredworld"] and stage == LevelStage.STAGE1_2 and inrepstage then
 		if roomtype ~= RoomType.ROOM_BOSS then
 			local stage_type = level:GetStageType()
 			if stage_type == StageType.STAGETYPE_REPENTANCE then
@@ -498,7 +498,7 @@ local function getMusicTrack()
 				return Music.MUSIC_DROSS_REVERSE
 			end
 		end
-	elseif modSaveData["inmineshaft"] then
+	elseif modSaveData["inmineshaft"] and stage == LevelStage.STAGE2_2 and inrepstage then
 		if level:GetStateFlag(LevelStateFlag.STATE_MINESHAFT_ESCAPE) then --this flag doesn't seem to be set until leaving the room after Mom's Shadow spawns
 			return Music.MUSIC_MINESHAFT_ESCAPE
 		else
@@ -1402,6 +1402,7 @@ MMC.AddMusicCallback = addMusicCallback
 MMC.RemoveMusicCallback = removeMusicCallback
 MMC.GetCorrectedTrackNum = correctedTrackNum
 -- MMC.GetCallbacks = function() return Callbacks end
+MMC.GetSaveData = function() return modSaveData end
 MMC.InCustomStage = function() return inbadstage end
 MMC.Manager = function() return overridemusicmgr end
 MMC.DisableMusicLayers = false
