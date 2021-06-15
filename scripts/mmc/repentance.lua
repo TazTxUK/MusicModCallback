@@ -1111,6 +1111,11 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		end
 	end
 	
+	--this is necessary for the music to play after Dream Catcher animations
+	if currentMusicId == Music.MUSIC_JINGLE_NIGHTMARE and Game():GetHUD():IsVisible() then
+		musicCrossfade(getStageMusic())
+	end
+	
 	if room:GetType() == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 		local currentbosscount = Isaac.CountBosses()
 		
