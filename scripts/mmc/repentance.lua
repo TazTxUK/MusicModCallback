@@ -400,7 +400,7 @@ local function getStageMusic()
 	if deathcertificateroom then
 		local backdrop = Game():GetRoom():GetBackdropType()
 		if (backdrop > 48 and backdrop < 55) or backdrop == 60 then
-			return getChapterMusic(LevelStage.STAGE8, StageType.STAGETYPE_WOTL, game:IsGreedMode())
+			return Music.MUSIC_DARK_CLOSET
 		else
 			deathcertificateroom = false
 		end
