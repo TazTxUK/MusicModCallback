@@ -996,9 +996,20 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent)
 end, EntityType.ENTITY_ISAAC)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
-	musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER) --TODO: this plays later than it should
 	modSaveData["darkhome"] = 5
 end, EntityType.ENTITY_DOGMA)
+
+function MusicModCallback:PlayDogmaOutro(entity)
+	local sprite = entity:GetSprite()
+	local anim = sprite:GetAnimation()
+	if anim == "Death" then
+		local frame = sprite:GetFrame()
+		if frame == 80 then
+			musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER)
+		end
+	end
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_NPC_UPDATE, MusicModCallback.PlayDogmaOutro, EntityType.ENTITY_DOGMA)
 
 --handle Angel Statue fights
 function MusicModCallback:StartAngelFight()
