@@ -832,6 +832,19 @@ end
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.UpdateSaveValuesForNewFloor)
+
+--ensure correct "darkhome" value at start of Home, even if jumping to Home using debug console
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, function()
+	local level = Game():GetLevel()
+	if level:GetStage() == LevelStage.STAGE8 then
+		if level:GetStageType() == StageType.STAGETYPE_WOTL then
+			modSaveData["darkhome"] = 2
+		else
+			modSaveData["darkhome"] = 0
+		end
+	end
+end)
+
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.LoadSaveData)
 
