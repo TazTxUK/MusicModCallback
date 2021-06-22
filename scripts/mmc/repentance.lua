@@ -864,14 +864,15 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function() --thi
 	end
 end)
 
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_END, function(isGameOver)
+function MusicModCallback:PlayGameOverMusic(isGameOver)
 	for i,v in pairs(musicJingles) do
 		v["timeleft"] = 0
 	end
 	if isGameOver then
 		musicCrossfade(Music.MUSIC_JINGLE_GAME_OVER, Music.MUSIC_GAME_OVER)
 	end
-end)
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_END, MusicModCallback.PlayGameOverMusic)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
