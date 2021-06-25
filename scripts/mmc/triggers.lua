@@ -1,7 +1,7 @@
 local music_triggers = {
 	
 	--[[
-	Music triggers will replace normal music callbacks.
+	Music triggers will replace (or supplement) normal music callbacks.
 	
 	With the current API, you can only check for a music track and replace it without any context.
 	This should rectify that, making music replacements for specific scenarios easier, (Eg. Mega
@@ -11,6 +11,16 @@ local music_triggers = {
 	
 	This mostly affects Soundtrack Menu. As of right now, it has a special case for Mega Satan, but
 	this update should make it so that no special cases are needed at all.
+	
+	If you have a surplus of music from another source to put into Isaac, you can use this trigger
+	system to add separate tracks to Basement I and Basement II for example rather than add it to
+	the entire Basement, if you want.
+	Conversely, if you do not have enough music, you can make tracks simply not play or redirect to
+	other tracks. For example: Have one track cover all boss music by looking for the "BOSS" tag.
+	
+	The "REPENTANCE" tag is added to all repentance triggers. If there was a music mod from Afterbirth+
+	that you would like to convert into a repentance soundtrack, you can use this tag to determine
+	if the music will be replaced successfully or not, and it can be redirected.
 	]]
 	
 	["STAGE_BASEMENT"] = {
@@ -97,6 +107,11 @@ local music_triggers = {
 		tags = {"STAGE", "REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE4_1", "STAGE4_2", "STAGE4", "STAGE4_GREED"}
 	},
 	
+	["STAGE_BLUE_WOMB"] = {
+		track = Music.MUSIC_BLUE_WOMB,
+		tags = {"STAGE", "STAGE4_3", "STAGE4"}
+	},
+	
 	["STAGE_SHEOL"] = {
 		track = Music.MUSIC_SHEOL,
 		tags = {"STAGE", "STAGETYPE_ORIGINAL", "STAGE5", "STAGE5_GREED"}
@@ -137,6 +152,172 @@ local music_triggers = {
 		tags = {"STAGE", "STAGETYPE_WOTL", "STAGE8"}
 	},
 	
+	["BOSS"] = {
+		track = Music.MUSIC_BOSS,
+		tags = {"BOSS", "BOSS_GENERIC"}
+	},
+	["BOSS_ALTERNATE"] = {
+		track = Music.MUSIC_BOSS2,
+		tags = {"BOSS", "BOSS_GENERIC"}
+	},
+	["BOSS_REPENTANCE"] = {
+		track = Music.MUSIC_BOSS3,
+		tags = {"BOSS", "BOSS_GENERIC", "REPENTANCE"}
+	},
+	["BOSS_MOM"] = {
+		track = Music.MUSIC_MOM_BOSS,
+		tags = {"BOSS", "STAGE3_2"}
+	},
+	["BOSS_MOMS_HEART_WOMB"] = {
+		track = Music.MUSIC_MOMS_HEART_BOSS,
+		tags = {"BOSS", "STAGE4_2", "BOSS_MOMS_HEART"}
+	},
+	["BOSS_MOMS_HEART_MAUSOLEUM"] = {
+		track = Music.MUSIC_MOMS_HEART_BOSS,
+		tags = {"BOSS", "STAGE3_2", "REPENTANCE", "BOSS_MOMS_HEART"}
+	},
+	["BOSS_ISAAC"] = {
+		track = Music.MUSIC_ISAAC_BOSS,
+		tags = {"BOSS", "STAGE5", "STAGETYPE_WOTL"}
+	},
+	["BOSS_SATAN"] = {
+		track = Music.MUSIC_SATAN_BOSS,
+		tags = {"BOSS", "STAGE5", "STAGETYPE_ORIGINAL"}
+	},
+	["BOSS_LAMB"] = {
+		track = Music.MUSIC_DARKROOM_BOSS,
+		tags = {"BOSS", "STAGE6", "STAGETYPE_ORIGINAL"}
+	},
+	["BOSS_BLUE_BABY_CHEST"] = {
+		track = Music.MUSIC_BLUEBABY_BOSS,
+		tags = {"BOSS", "STAGE6", "STAGETYPE_WOTL", "BOSS_BLUE_BABY"}
+	},
+	["BOSS_BLUE_BABY_BLUE_WOMB"] = {
+		track = Music.MUSIC_BLUEBABY_BOSS,
+		tags = {"BOSS", "STAGE4_3", "BOSS_BLUE_BABY"}
+	},
+	["BOSS_HUSH"] = {
+		track = Music.MUSIC_BLUEBABY_BOSS,
+		tags = {"BOSS"}
+	},
+	["BOSS_ULTRA_GREED"] = {
+		track = Music.MUSIC_ULTRAGREED_BOSS,
+		tags = {"BOSS", "BOSS_ULTRA_GREED"}
+	},
+	["BOSS_ULTRA_GREEDIER"] = {
+		track = Music.MUSIC_ULTRAGREED_BOSS,
+		tags = {"BOSS", "BOSS_ULTRA_GREED"}
+	},
+	
+	["ROOM_SHOP"] = {
+		track = Music.MUSIC_SHOP_ROOM,
+		tags = {"ROOM"}
+	},
+	["ROOM_TREASURE"] = {
+		tags = {"ROOM"},
+	},
+	["ROOM_SECRET"] = {
+		track = Music.MUSIC_SECRET_ROOM,
+		tags = {"ROOM", "ROOM_SECRET"}
+	},
+	["ROOM_SUPER_SECRET"] = {
+		track = Music.MUSIC_SECRET_ROOM2,
+		tags = {"ROOM", "ROOM_SECRET"}
+	},
+	["ROOM_ULTRA_SECRET"] = {
+		track = Music.MUSIC_SECRET_ROOM_ALT_ALT,
+		tags = {"ROOM", "ROOM_SECRET", "REPENTANCE"}
+	},
+	["ROOM_ARCADE"] = {
+		track = Music.MUSIC_ARCADE_ROOM,
+		tags = {"ROOM"}
+	},
+	["ROOM_CURSE"] = {
+		tags = {"ROOM"}
+	},
+	["ROOM_CHALLENGE_NORMAL_INACTIVE"] = {
+		tags = {"ROOM", "ROOM_CHALLENGE_INACTIVE"}
+	},
+	["ROOM_CHALLENGE_NORMAL_ACTIVE"] = {
+		track = Music.MUSIC_CHALLENGE_FIGHT,
+		tags = {"ROOM", "ROOM_CHALLENGE_ACTIVE"}
+	},
+	["ROOM_CHALLENGE_NORMAL_CLEAR"] = {
+		track = Music.MUSIC_BOSS_OVER,
+		tags = {"ROOM", "ROOM_CHALLENGE_CLEAR"}
+	},
+	["ROOM_CHALLENGE_BOSS_INACTIVE"] = {
+		tags = {"ROOM", "ROOM_CHALLENGE_INACTIVE"}
+	},
+	["ROOM_CHALLENGE_BOSS_ACTIVE"] = {
+		track = Music.MUSIC_CHALLENGE_FIGHT,
+		tags = {"ROOM", "ROOM_CHALLENGE_ACTIVE"}
+	},
+	["ROOM_CHALLENGE_BOSS_CLEAR"] = {
+		track = Music.MUSIC_BOSS_OVER,
+		tags = {"ROOM", "ROOM_CHALLENGE_CLEAR"}
+	},
+	["ROOM_LIBRARY"] = {
+		track = Music.MUSIC_LIBRARY_ROOM,
+		tags = {"ROOM"}
+	},
+	["ROOM_SACRIFICE"] = {
+		tags = {"ROOM"}
+	},
+	["ROOM_DEVIL"] = {
+		track = Music.MUSIC_DEVIL_ROOM,
+		tags = {"ROOM"}
+	},
+	["ROOM_ANGEL"] = {
+		track = Music.MUSIC_ANGEL_ROOM,
+		tags = {"ROOM"}
+	},
+	["ROOM_DUNGEON"] = {
+		track = Music.MUSIC_DUNGEON,
+		tags = {"ROOM"}
+	},
+	["ROOM_BOSS_RUSH_INACTIVE"] = {
+		tags = {"ROOM"}
+	},
+	["ROOM_BOSS_RUSH_ACTIVE"] = {
+		track = Music.MUSIC_BOSS_RUSH,
+		tags = {"ROOM"}
+	},
+	["ROOM_BOSS_RUSH_CLEAR"] = {
+		track = Music.MUSIC_BOSS_OVER,
+		tags = {"ROOM"}
+	},
+	["ROOM_ISAACS"] = {
+		tags = {"ROOM", "ROOM_ISAACS"}
+	},
+	["ROOM_BARREN"] = {
+		tags = {"ROOM", "ROOM_ISAACS"}
+	},
+	["ROOM_CHEST"] = {
+		tags = {"ROOM", "ROOM_DOUBLE_KEY"},
+	},
+	["ROOM_DICE"] = {
+		tags = {"ROOM", "ROOM_DOUBLE_KEY"},
+	},
+	["ROOM_BLACK_MARKET"] = {
+		tags = {"ROOM"},
+	},
+	["ROOM_GREED_EXIT"] = {
+		tags = {"ROOM"},
+	},
+	["ROOM_PLANETARIUM"] = {
+		track = Music.MUSIC_PLANETARIUM,
+		tags = {"ROOM", "REPENTANCE"},
+	},
+	["ROOM_TELEPORTER"] = {
+		tags = {"ROOM", "REPENTANCE"},
+	},
+	["ROOM_TELEPORTER_EXIT"] = {
+		tags = {"ROOM", "REPENTANCE"},
+	},
+	["ROOM_OTHER"] = {
+		tags = {"ROOM"},
+	},
 	
 	--temporary enum reference
 	-- MUSIC_NULL = 0,
