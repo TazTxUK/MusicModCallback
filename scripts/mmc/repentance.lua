@@ -1,3 +1,5 @@
+local music_triggers = require "scripts.mmc.triggers"
+
 if MMC then return end
 
 local MusicModCallback = RegisterMod("Music Mod Callback", 1)
@@ -7,6 +9,7 @@ local modSaveData = {}
 
 MMC = {}
 MMC.Mod = MusicModCallback
+MMC.MusicTriggers = music_triggers
 
 MMC.Version = "2.0"
 

@@ -1,3 +1,5 @@
+local Music = require("scripts.mmc.enums")
+
 local music_triggers = {
 	
 	--[[
@@ -37,11 +39,19 @@ local music_triggers = {
 	},
 	["STAGE_DOWNPOUR"] = {
 		track = Music.MUSIC_DOWNPOUR,
-		tags = {"STAGE", "REPENTANCE", "STAGETYPE_REPENTANCE", "STAGE1_1", "STAGE1_2", "STAGE1", "STAGE1_GREED"}
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_0", "STAGETYPE_REPENTANCE", "STAGE1_1", "STAGE1_2", "STAGE1", "STAGE1_GREED"}
 	},
 	["STAGE_DROSS"] = {
 		track = Music.MUSIC_DROSS,
-		tags = {"STAGE", "REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE1_1", "STAGE1_2", "STAGE1", "STAGE1_GREED"}
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_0", "STAGETYPE_REPENTANCE_B", "STAGE1_1", "STAGE1_2", "STAGE1", "STAGE1_GREED"}
+	},
+	["STAGE_MIRROR_DOWNPOUR"] = {
+		track = Music.MUSIC_DOWNPOUR_REVERSE,
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_1", "STAGETYPE_REPENTANCE", "STAGE1_2", "STAGE1", "STAGE1_GREED",}
+	},
+	["STAGE_MIRROR_DROSS"] = {
+		track = Music.MUSIC_DROSS_REVERSE,
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_1", "STAGETYPE_REPENTANCE_B", "STAGE1_2", "STAGE1", "STAGE1_GREED"}
 	},
 	
 	["STAGE_CAVES"] = {
@@ -58,11 +68,19 @@ local music_triggers = {
 	},
 	["STAGE_MINES"] = {
 		track = Music.MUSIC_MINES,
-		tags = {"STAGE", "REPENTANCE", "STAGETYPE_REPENTANCE", "STAGE2_1", "STAGE2_2", "STAGE2", "STAGE2_GREED"}
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_0", "STAGETYPE_REPENTANCE", "STAGE2_1", "STAGE2_2", "STAGE2", "STAGE2_GREED"}
 	},
 	["STAGE_ASHPIT"] = {
 		track = Music.MUSIC_ASHPIT,
-		tags = {"STAGE", "REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE2_1", "STAGE2_2", "STAGE2", "STAGE2_GREED"}
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_0", "STAGETYPE_REPENTANCE_B", "STAGE2_1", "STAGE2_2", "STAGE2", "STAGE2_GREED"}
+	},
+	["STAGE_MINESHAFT"] = {
+		track = Music.MUSIC_MINESHAFT_AMBIENT,
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_1", "STAGETYPE_REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE2_2", "STAGE2"}
+	},
+	["STAGE_MINESHAFT_ESCAPE"] = {
+		track = Music.MUSIC_MINESHAFT_ESCAPE,
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_1", "STAGETYPE_REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE2_2", "STAGE2"}
 	},
 	
 	["STAGE_DEPTHS"] = {
@@ -198,228 +216,307 @@ local music_triggers = {
 	},
 	["BOSS_HUSH"] = {
 		track = Music.MUSIC_BLUEBABY_BOSS,
-		tags = {"BOSS"}
+		tags = {"BOSS", "STAGE4_3"}
 	},
 	["BOSS_ULTRA_GREED"] = {
 		track = Music.MUSIC_ULTRAGREED_BOSS,
-		tags = {"BOSS", "BOSS_ULTRA_GREED"}
+		tags = {"BOSS", "STAGE7_GREED", "BOSS_ULTRA_GREED"}
 	},
 	["BOSS_ULTRA_GREEDIER"] = {
 		track = Music.MUSIC_ULTRAGREED_BOSS,
-		tags = {"BOSS", "BOSS_ULTRA_GREED"}
+		tags = {"BOSS", "STAGE7_GREED", "BOSS_ULTRA_GREED"}
+	},
+	["BOSS_DELIRIUM"] = {
+		track = Music.MUSIC_VOID_BOSS,
+		tags = {"BOSS", "STAGE7"}
+	},
+	["BOSS_MOTHER"] = {
+		track = Music.MUSIC_MOTHER_BOSS,
+		tags = {"BOSS", "STAGE4_2", "REPENTANCE"}
+	},
+	["BOSS_DOGMA"] = {
+		track = Music.MUSIC_DOGMA_BOSS,
+		tags = {"BOSS", "STAGE8", "REPENTANCE"}
+	},
+	["BOSS_BEAST"] = {
+		track = Music.MUSIC_BEAST_BOSS,
+		tags = {"BOSS", "STAGE8", "REPENTANCE"}
 	},
 	
 	["ROOM_SHOP"] = {
 		track = Music.MUSIC_SHOP_ROOM,
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_TREASURE"] = {
-		tags = {"ROOM"},
+		tags = {},
+	},
+	["ROOM_BOSS_CLEAR"] = {
+		track = Music.MUSIC_BOSS_OVER,
+		tags = {"BOSS_CLEAR"},
+	},
+	["ROOM_BOSS_CLEAR_TWISTED"] = {
+		track = Music.MUSIC_BOSS_OVER_TWISTED,
+		tags = {},
+	},
+	["ROOM_MINIBOSS_ACTIVE"] = {
+		tags = {},
+	},
+	["ROOM_MINIBOSS_CLEAR"] = {
+		tags = {"BOSS_CLEAR"},
 	},
 	["ROOM_SECRET"] = {
 		track = Music.MUSIC_SECRET_ROOM,
-		tags = {"ROOM", "ROOM_SECRET"}
+		tags = {"ROOM_SECRET"}
 	},
 	["ROOM_SUPER_SECRET"] = {
 		track = Music.MUSIC_SECRET_ROOM2,
-		tags = {"ROOM", "ROOM_SECRET"}
+		tags = {"ROOM_SECRET"}
 	},
 	["ROOM_ULTRA_SECRET"] = {
 		track = Music.MUSIC_SECRET_ROOM_ALT_ALT,
-		tags = {"ROOM", "ROOM_SECRET", "REPENTANCE"}
+		tags = {"ROOM_SECRET", "REPENTANCE"}
 	},
 	["ROOM_ARCADE"] = {
 		track = Music.MUSIC_ARCADE_ROOM,
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_CURSE"] = {
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_CHALLENGE_NORMAL_INACTIVE"] = {
-		tags = {"ROOM", "ROOM_CHALLENGE_INACTIVE"}
+		tags = {"ROOM_CHALLENGE_INACTIVE"}
 	},
 	["ROOM_CHALLENGE_NORMAL_ACTIVE"] = {
 		track = Music.MUSIC_CHALLENGE_FIGHT,
-		tags = {"ROOM", "ROOM_CHALLENGE_ACTIVE"}
+		tags = {"ROOM_CHALLENGE_ACTIVE"}
 	},
 	["ROOM_CHALLENGE_NORMAL_CLEAR"] = {
 		track = Music.MUSIC_BOSS_OVER,
-		tags = {"ROOM", "ROOM_CHALLENGE_CLEAR"}
+		tags = {"ROOM_CHALLENGE_CLEAR", "BOSS_CLEAR"}
 	},
 	["ROOM_CHALLENGE_BOSS_INACTIVE"] = {
-		tags = {"ROOM", "ROOM_CHALLENGE_INACTIVE"}
+		tags = {"ROOM_CHALLENGE_INACTIVE"}
 	},
 	["ROOM_CHALLENGE_BOSS_ACTIVE"] = {
 		track = Music.MUSIC_CHALLENGE_FIGHT,
-		tags = {"ROOM", "ROOM_CHALLENGE_ACTIVE"}
+		tags = {"ROOM_CHALLENGE_ACTIVE"}
 	},
 	["ROOM_CHALLENGE_BOSS_CLEAR"] = {
 		track = Music.MUSIC_BOSS_OVER,
-		tags = {"ROOM", "ROOM_CHALLENGE_CLEAR"}
+		tags = {"ROOM_CHALLENGE_CLEAR", "BOSS_CLEAR"}
 	},
 	["ROOM_LIBRARY"] = {
 		track = Music.MUSIC_LIBRARY_ROOM,
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_SACRIFICE"] = {
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_DEVIL"] = {
 		track = Music.MUSIC_DEVIL_ROOM,
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_ANGEL"] = {
 		track = Music.MUSIC_ANGEL_ROOM,
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_DUNGEON"] = {
 		track = Music.MUSIC_DUNGEON,
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_BOSS_RUSH_INACTIVE"] = {
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_BOSS_RUSH_ACTIVE"] = {
 		track = Music.MUSIC_BOSS_RUSH,
-		tags = {"ROOM"}
+		tags = {}
 	},
 	["ROOM_BOSS_RUSH_CLEAR"] = {
 		track = Music.MUSIC_BOSS_OVER,
-		tags = {"ROOM"}
+		tags = {"BOSS_CLEAR"}
 	},
 	["ROOM_ISAACS"] = {
-		tags = {"ROOM", "ROOM_ISAACS"}
+		tags = {"ROOM_ISAACS"}
 	},
 	["ROOM_BARREN"] = {
-		tags = {"ROOM", "ROOM_ISAACS"}
+		tags = {"ROOM_ISAACS"}
 	},
 	["ROOM_CHEST"] = {
-		tags = {"ROOM", "ROOM_DOUBLE_KEY"},
+		tags = {"ROOM_DOUBLE_KEY"},
 	},
 	["ROOM_DICE"] = {
-		tags = {"ROOM", "ROOM_DOUBLE_KEY"},
+		tags = {"ROOM_DOUBLE_KEY"},
 	},
 	["ROOM_BLACK_MARKET"] = {
-		tags = {"ROOM"},
+		tags = {},
 	},
 	["ROOM_GREED_EXIT"] = {
-		tags = {"ROOM"},
+		tags = {},
 	},
 	["ROOM_PLANETARIUM"] = {
 		track = Music.MUSIC_PLANETARIUM,
-		tags = {"ROOM", "REPENTANCE"},
+		tags = {"REPENTANCE"},
 	},
 	["ROOM_TELEPORTER"] = {
-		tags = {"ROOM", "REPENTANCE"},
+		tags = {"REPENTANCE"},
 	},
 	["ROOM_TELEPORTER_EXIT"] = {
-		tags = {"ROOM", "REPENTANCE"},
+		tags = {"REPENTANCE"},
 	},
 	["ROOM_OTHER"] = {
-		tags = {"ROOM"},
+		tags = {},
 	},
 	
-	--temporary enum reference
-	-- MUSIC_NULL = 0,
-	-- MUSIC_BASEMENT = Isaac.GetMusicIdByName("Basement"),
-	-- MUSIC_CAVES = Isaac.GetMusicIdByName("Caves"),
-	-- MUSIC_DEPTHS = Isaac.GetMusicIdByName("Depths"),
-	-- MUSIC_CELLAR = Isaac.GetMusicIdByName("Cellar"),
-	-- MUSIC_CATACOMBS = Isaac.GetMusicIdByName("Catacombs"),
-	-- MUSIC_NECROPOLIS = Isaac.GetMusicIdByName("Necropolis"),
-	-- MUSIC_WOMB_UTERO = Isaac.GetMusicIdByName("Womb"),
-	-- MUSIC_GAME_OVER = Isaac.GetMusicIdByName("Game Over"),
-	-- MUSIC_BOSS = Isaac.GetMusicIdByName("Boss"),
-	-- MUSIC_CATHEDRAL = Isaac.GetMusicIdByName("Cathedral"),
-	-- MUSIC_SHEOL = Isaac.GetMusicIdByName("Sheol"),
-	-- MUSIC_DARK_ROOM = Isaac.GetMusicIdByName("Dark Room"),
-	-- MUSIC_CHEST = Isaac.GetMusicIdByName("Chest"),
-	-- MUSIC_BURNING_BASEMENT = Isaac.GetMusicIdByName("Burning Basement"),
-	-- MUSIC_FLOODED_CAVES = Isaac.GetMusicIdByName("Flooded Caves"),
-	-- MUSIC_DANK_DEPTHS = Isaac.GetMusicIdByName("Dank Depths"),
-	-- MUSIC_SCARRED_WOMB = Isaac.GetMusicIdByName("Scarred Womb"),
-	-- MUSIC_BLUE_WOMB = Isaac.GetMusicIdByName("Blue Womb"),
-	-- MUSIC_MOM_BOSS = Isaac.GetMusicIdByName("Boss (Depths - Mom)"),
-	-- MUSIC_MOMS_HEART_BOSS = Isaac.GetMusicIdByName("Boss (Womb - Mom's Heart)"),
-	-- MUSIC_ISAAC_BOSS = Isaac.GetMusicIdByName("Boss (Cathedral - Isaac)"),
-	-- MUSIC_SATAN_BOSS = Isaac.GetMusicIdByName("Boss (Sheol - Satan)"),
-	-- MUSIC_DARKROOM_BOSS = Isaac.GetMusicIdByName("Boss (Dark Room)"),
-	-- MUSIC_BLUEBABY_BOSS = Isaac.GetMusicIdByName("Boss (Chest - ???)"),
-	-- MUSIC_BOSS2 = Isaac.GetMusicIdByName("Boss (alternate)"),
-	-- MUSIC_HUSH_BOSS = Isaac.GetMusicIdByName("Boss (Blue Womb - Hush)"),
-	-- MUSIC_ULTRAGREED_BOSS = Isaac.GetMusicIdByName("Boss (Ultra Greed)"),
-	-- MUSIC_LIBRARY_ROOM = Isaac.GetMusicIdByName("Library Room"),
-	-- MUSIC_SECRET_ROOM = Isaac.GetMusicIdByName("Secret Room"),
-	-- MUSIC_DEVIL_ROOM = Isaac.GetMusicIdByName("Devil Room"),
-	-- MUSIC_ANGEL_ROOM = Isaac.GetMusicIdByName("Angel Room"),
-	-- MUSIC_SHOP_ROOM = Isaac.GetMusicIdByName("Shop Room"),
-	-- MUSIC_ARCADE_ROOM = Isaac.GetMusicIdByName("Arcade Room"),
-	-- MUSIC_BOSS_OVER = Isaac.GetMusicIdByName("Boss Room (empty)"),
-	-- MUSIC_CHALLENGE_FIGHT = Isaac.GetMusicIdByName("Challenge Room (fight)"),
-	-- MUSIC_CREDITS = Isaac.GetMusicIdByName("Credits"),
-	-- MUSIC_TITLE = Isaac.GetMusicIdByName("Title Screen"),
-	-- MUSIC_TITLE_AFTERBIRTH = Isaac.GetMusicIdByName("Title Screen (Afterbirth)"),
-	-- MUSIC_JINGLE_BOSS = Isaac.GetMusicIdByName("Boss (jingle)"),
-	-- MUSIC_JINGLE_BOSS_OVER = Isaac.GetMusicIdByName("Boss Death (jingle)"),
-	-- MUSIC_JINGLE_HOLYROOM_FIND = Isaac.GetMusicIdByName("Holy Room Find (jingle)"),
-	-- MUSIC_JINGLE_SECRETROOM_FIND = Isaac.GetMusicIdByName("Secret Room Find (jingle)"),
-	-- MUSIC_JINGLE_TREASUREROOM_ENTRY_0 = Isaac.GetMusicIdByName("Treasure Room Entry (jingle) 1"),
-	-- MUSIC_JINGLE_TREASUREROOM_ENTRY_1 = Isaac.GetMusicIdByName("Treasure Room Entry (jingle) 2"),
-	-- MUSIC_JINGLE_TREASUREROOM_ENTRY_2 = Isaac.GetMusicIdByName("Treasure Room Entry (jingle) 3"),
-	-- MUSIC_JINGLE_TREASUREROOM_ENTRY_3 = Isaac.GetMusicIdByName("Treasure Room Entry (jingle) 4"),
-	-- MUSIC_JINGLE_CHALLENGE_ENTRY = Isaac.GetMusicIdByName("Challenge Room Entry (jingle)"),
-	-- MUSIC_JINGLE_CHALLENGE_OUTRO = Isaac.GetMusicIdByName("Challenge Room Outro (jingle)"),
-	-- MUSIC_JINGLE_GAME_OVER = Isaac.GetMusicIdByName("Game Over (jingle)"),
-	-- MUSIC_JINGLE_DEVILROOM_FIND = Isaac.GetMusicIdByName("Devil Room appear (jingle)"),
-	-- MUSIC_JINGLE_GAME_START = Isaac.GetMusicIdByName("Game start (jingle)"),
-	-- MUSIC_JINGLE_NIGHTMARE = Isaac.GetMusicIdByName("Nightmare"),
-	-- MUSIC_JINGLE_BOSS_OVER2 = Isaac.GetMusicIdByName("Boss Death Alternate (jingle)"),
-	-- MUSIC_JINGLE_HUSH_OVER = Isaac.GetMusicIdByName("Boss Hush Death (jingle)"),
-	-- MUSIC_INTRO_VOICEOVER = Isaac.GetMusicIdByName("Intro Voiceover"),
-	-- MUSIC_EPILOGUE_VOICEOVER = Isaac.GetMusicIdByName("Epilogue Voiceover"),
-	-- MUSIC_VOID = Isaac.GetMusicIdByName("Void"),
-	-- MUSIC_VOID_BOSS = Isaac.GetMusicIdByName("Boss (Void)"),
+	["JINGLE_BOSS"] = {
+		track = Music.MUSIC_JINGLE_BOSS,
+		tags = {"JINGLE"},
+	},
+	["JINGLE_BOSS_OVER_REBIRTH"] = {
+		track = Music.MUSIC_JINGLE_BOSS_OVER,
+		tags = {"JINGLE", "JINGLE_BOSS_OVER"},
+	},
+	["JINGLE_BOSS_OVER_AFTERBIRTH"] = {
+		track = Music.MUSIC_JINGLE_BOSS_OVER2,
+		tags = {"JINGLE", "JINGLE_BOSS_OVER"},
+	},
+	["JINGLE_BOSS_OVER_REPENTANCE"] = {
+		track = Music.MUSIC_JINGLE_BOSS_OVER3,
+		tags = {"JINGLE", "JINGLE_BOSS_OVER", "REPENTANCE"},
+	},
+	["JINGLE_ANGEL_ROOM"] = {
+		track = Music.MUSIC_JINGLE_HOLYROOM_FIND,
+		tags = {"JINGLE", "JINGLE_DEAL_ROOM"},
+	},
+	["JINGLE_SECRET_ROOM"] = {
+		track = Music.MUSIC_JINGLE_SECRETROOM_FIND,
+		tags = {"JINGLE"},
+	},
+	["JINGLE_TREASURE_ROOM_0"] = {
+		track = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_0,
+		tags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
+	},
+	["JINGLE_TREASURE_ROOM_1"] = {
+		track = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_1,
+		tags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
+	},
+	["JINGLE_TREASURE_ROOM_2"] = {
+		track = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2,
+		tags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
+	},
+	["JINGLE_TREASURE_ROOM_3"] = {
+		track = Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3,
+		tags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
+	},
+	["JINGLE_CHALLENGE_NORMAL_OUTRO"] = {
+		track = Music.MUSIC_JINGLE_CHALLENGE_OUTRO,
+		tags = {"JINGLE", "JINGLE_CHALLENGE_OUTRO"},
+	},
+	["JINGLE_CHALLENGE_BOSS_OUTRO"] = {
+		track = Music.MUSIC_JINGLE_CHALLENGE_OUTRO,
+		tags = {"JINGLE", "JINGLE_CHALLENGE_OUTRO"},
+	},
+	["JINGLE_GAME_OVER"] = {
+		track = Music.MUSIC_JINGLE_GAME_OVER,
+		tags = {"JINGLE"},
+	},
+	["JINGLE_DEVIL_ROOM"] = {
+		track = Music.MUSIC_JINGLE_DEVILROOM_FIND,
+		tags = {"JINGLE", "JINGLE_DEAL_ROOM"},
+	},
+	["JINGLE_BOSS_RUSH_OUTRO"] = {
+		track = Music.MUSIC_JINGLE_BOSS_OVER, --check
+		tags = {"JINGLE", "JINGLE_BOSS_OVER"},
+	},
+	["JINGLE_MOTHER_OVER"] = {
+		track = Music.MUSIC_JINGLE_MOTHER_OVER,
+		tags = {"JINGLE"},
+	},
+	["JINGLE_DOGMA_OVER"] = {
+		track = Music.MUSIC_JINGLE_DOGMA_OVER,
+		tags = {"JINGLE"},
+	},
+	["JINGLE_BEAST_OVER"] = {
+		track = Music.MUSIC_JINGLE_BEAST_OVER,
+		tags = {"JINGLE"},
+	},
+	["JINGLE_STRANGE_DOOR"] = {
+		track = Music.MUSIC_STRANGE_DOOR_JINGLE,
+		tags = {"JINGLE"},
+	},
 	
-	-- MUSIC_UTERO = Isaac.GetMusicIdByName("Utero"),
-	-- MUSIC_SECRET_ROOM2 = Isaac.GetMusicIdByName("Secret Room Alt"),
-	-- MUSIC_BOSS_RUSH = Isaac.GetMusicIdByName("Boss Rush"),
-	-- MUSIC_JINGLE_BOSS_RUSH_OUTRO = Isaac.GetMusicIdByName("Boss Rush (jingle)"),
-	-- MUSIC_BOSS3 = Isaac.GetMusicIdByName("Boss (alternate alternate)"),
-	-- MUSIC_JINGLE_BOSS_OVER3 = Isaac.GetMusicIdByName("Boss Death Alternate Alternate (jingle)"),
-	-- MUSIC_MOTHER_BOSS = Isaac.GetMusicIdByName("Boss (Mother)"),
-	-- MUSIC_DOGMA_BOSS = Isaac.GetMusicIdByName("Boss (Dogma)"),
-	-- MUSIC_BEAST_BOSS = Isaac.GetMusicIdByName("Boss (Beast)"),
-	-- MUSIC_JINGLE_MOTHER_OVER = Isaac.GetMusicIdByName("Boss Mother Death (jingle)"),
-	-- MUSIC_JINGLE_DOGMA_OVER = Isaac.GetMusicIdByName("Boss Dogma Death (jingle)"),
-	-- MUSIC_JINGLE_BEAST_OVER = Isaac.GetMusicIdByName("Boss Beast Death (jingle)"),
-	-- MUSIC_PLANETARIUM = Isaac.GetMusicIdByName("Planetarium"),
-	-- MUSIC_SECRET_ROOM_ALT_ALT = Isaac.GetMusicIdByName("Secret Room Alt Alt"),
-	-- MUSIC_BOSS_OVER_TWISTED = Isaac.GetMusicIdByName("Boss Room (empty, twisted)"),
-	-- MUSIC_TITLE_REPENTANCE = Isaac.GetMusicIdByName("Title Screen (Repentance)"),
-	-- MUSIC_JINGLE_GAME_START_ALT = Isaac.GetMusicIdByName("Game start (jingle, twisted)"),
-	-- MUSIC_JINGLE_NIGHTMARE_ALT = Isaac.GetMusicIdByName("Nightmare (alt)"),
-	-- MUSIC_MOTHERS_SHADOW_INTRO = Isaac.GetMusicIdByName("Mom's Shadow Intro"),
-	-- MUSIC_DOGMA_INTRO = Isaac.GetMusicIdByName("Dogma Intro"),
-	-- MUSIC_STRANGE_DOOR_JINGLE = Isaac.GetMusicIdByName("Strange Door (jingle)"),
-	-- MUSIC_DARK_CLOSET = Isaac.GetMusicIdByName("Echoes Reverse"),
-	-- MUSIC_CREDITS_ALT = Isaac.GetMusicIdByName("Credits Alt"),
-	-- MUSIC_CREDITS_ALT_FINAL = Isaac.GetMusicIdByName("Credits Alt Final"),
-	-- MUSIC_DOWNPOUR = Isaac.GetMusicIdByName("Downpour"),
-	-- MUSIC_MINES = Isaac.GetMusicIdByName("Mines"),
-	-- MUSIC_MAUSOLEUM = Isaac.GetMusicIdByName("Mausoleum"),
-	-- MUSIC_CORPSE = Isaac.GetMusicIdByName("Corpse"),
-	-- MUSIC_DROSS = Isaac.GetMusicIdByName("Dross"),
-	-- MUSIC_ASHPIT = Isaac.GetMusicIdByName("Ashpit"),
-	-- MUSIC_GEHENNA = Isaac.GetMusicIdByName("Gehenna"),
-	-- MUSIC_MORTIS = (function() -- what the fuck
-		-- local Mortis = Isaac.GetMusicIdByName("Mortis")
-		-- return Mortis >= 0 and Mortis or Isaac.GetMusicIdByName("not done")
-	-- end)(),
-	-- MUSIC_ISAACS_HOUSE = Isaac.GetMusicIdByName("Home"),
-	-- MUSIC_FINAL_VOICEOVER = Isaac.GetMusicIdByName("Final Voiceover"),
-	-- MUSIC_DOWNPOUR_REVERSE = Isaac.GetMusicIdByName("Downpour (reversed)"),
-	-- MUSIC_DROSS_REVERSE = Isaac.GetMusicIdByName("Dross (reversed)"),
-	-- MUSIC_MINESHAFT_AMBIENT = Isaac.GetMusicIdByName("Abandoned Mineshaft"),
-	-- MUSIC_MINESHAFT_ESCAPE = Isaac.GetMusicIdByName("Mineshaft Escape"),
-	-- MUSIC_REVERSE_GENESIS = Isaac.GetMusicIdByName("Genesis (reversed)"),
+	["INTRO_MOTHERS_SHADOW"] = {
+		track = Music.MUSIC_MOTHERS_SHADOW_INTRO,
+		tags = {"INTRO"},
+	},
+	["INTRO_DOGMA"] = {
+		track = Music.MUSIC_DOGMA_INTRO,
+		tags = {"INTRO"},
+	},
+	
+	["STATE_GAME_OVER"] = {
+		track = Music.MUSIC_GAME_OVER,
+		tags = {},
+	},
+	["STATE_ASCENT"] = {
+		track = Music.MUSIC_REVERSE_GENESIS,
+		tags = {},
+	},
+	
+	["DIMENSION_DEATH_CERTIFICATE"] = {
+		track = Music.MUSIC_DARK_CLOSET,
+		tags = {},
+	},
 }
+
+--Metatable for triggers (for Global Variable Menu)
+local mt_trigger = {
+	__gvmrepr = function(self) return string.format("MMC Trigger (%i tags)", #self.tags) end,
+	__gvmkcolor = KColor(51/255, 231/255, 1.0, 1.0),
+}
+
+--Some automatic steps:
+--  Assign a capital case name for each trigger, in case it appears in a menu
+--  Add its own name as a tag
+--  Add its track enum as a tag
+
+local function capitalCase(s)
+	--This MIGHT be optimisable using patterns.
+	local str = s:lower():gsub("_", " ")
+	local next_letter = 1
+	while true do
+		str = str:sub(1, next_letter - 1) .. str:sub(next_letter, next_letter):upper() .. str:sub(next_letter + 1, -1)
+		next_letter = str:find(" ", next_letter + 1)
+		if next_letter == nil then break end
+		next_letter = next_letter + 1
+	end
+	return str
+end
+
+for trigger_name, trigger in pairs(music_triggers) do
+	--Set metatable
+	setmetatable(trigger, mt_trigger)
+
+	--Name
+	local underscore_pos = trigger_name:find("_")
+	if underscore_pos then
+		trigger.name = capitalCase(trigger_name:sub(underscore_pos + 1, -1)) .. " " .. capitalCase(trigger_name:sub(1, underscore_pos - 1))
+	else
+		trigger.name = capitalCase(trigger_name)
+	end
+	
+	--Assign own name as tag
+	--(This assumes the trigger name isnt already a tag, although it may not matter later)
+	table.insert(trigger.tags, trigger_name)
+	
+	--Add track enum as a tag
+	if trigger.track then
+		for music_name, music_id in pairs(Music) do
+			if trigger.track == music_id then
+				table.insert(trigger.tags, music_name)
+				break
+			end
+		end
+	end
+end
+
+return music_triggers
