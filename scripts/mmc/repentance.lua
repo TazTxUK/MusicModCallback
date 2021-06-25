@@ -11,6 +11,9 @@ MMC = {}
 MMC.Mod = MusicModCallback
 MMC.MusicTriggers = music_triggers
 
+Flagset = require "scripts.mmc.flagset"
+M = require "scripts.mmc.api"
+
 MMC.Version = "2.0"
 
 Isaac.ConsoleOutput("Loaded Music Mod Callback "..MMC.Version.."\n")

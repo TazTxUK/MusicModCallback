@@ -519,4 +519,22 @@ for trigger_name, trigger in pairs(music_triggers) do
 	end
 end
 
+--temp
+local tags = {}
+for trigger_name, trigger in pairs(music_triggers) do
+	for _, tag in ipairs(trigger.tags) do
+		tags[tag] = true
+	end
+end
+
+local tag_count = 0
+for _,_ in pairs(tags) do
+	tag_count = tag_count + 1
+end
+
+Isaac.ConsoleOutput("Tag Count: "..tag_count.."\n")
+MMCTags = tags
+
+--end temp
+
 return music_triggers
