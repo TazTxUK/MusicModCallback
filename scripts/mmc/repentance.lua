@@ -864,14 +864,15 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function() --thi
 	end
 end)
 
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_END, function(isGameOver)
+function MusicModCallback:PlayGameOverMusic(isGameOver)
 	for i,v in pairs(musicJingles) do
 		v["timeleft"] = 0
 	end
 	if isGameOver then
 		musicCrossfade(Music.MUSIC_JINGLE_GAME_OVER, Music.MUSIC_GAME_OVER)
 	end
-end)
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_END, MusicModCallback.PlayGameOverMusic)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	if not inbadstage then
@@ -1392,7 +1393,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		local door = room:GetDoor(i)
 		if door then
 			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET or door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
-				if door.State == 2 and (doorprevstates[i] == 1 or door.TargetRoomType == RoomType.ROOM_ULTRASECRET) then
+				if door.State == DoorState.STATE_OPEN and (doorprevstates[i] == DoorState.STATE_CLOSED or door.TargetRoomType == RoomType.ROOM_ULTRASECRET) then
 					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and not modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] then
 						modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] = true
 						local player = Isaac.GetPlayer()
