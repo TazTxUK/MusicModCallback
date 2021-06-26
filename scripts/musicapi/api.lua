@@ -28,4 +28,16 @@ for _, t in pairs(require "scripts.musicapi.triggers") do
 	end
 end
 
+local Query = require "scripts.musicapi.query"
+local util = require "scripts.musicapi.util"
+
+--TEST REMOVE LATER
+local Q1 = Query() & M.Flag("STAGE1_2")
+local Q2 = Query() & M.Flag("REPENTANCE")
+local Q3 = Query() & M.Flag("JINGLE") & ~M.Flag("JINGLE_DEAL_ROOM")
+
+util.cout(Q1("STAGE1_1"))
+util.cout(Q1("STAGE1_2"))
+util.cout(Q2("REPENTANCE"))
+
 return M

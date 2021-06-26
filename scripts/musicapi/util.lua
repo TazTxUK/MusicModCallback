@@ -45,6 +45,18 @@ function util.assertTypeFn(accepted_types, message) --message can be number for 
 	end
 end
 
+function util.assert(bool, msg, level)
+	if not bool then
+		error(msg, level and (level + 1) or 2)
+	end
+end
+
+function util.cout(...)
+	for _, msg in ipairs{...} do
+		Isaac.ConsoleOutput(tostring(msg).."\n")
+	end
+end
+
 --TEST (COMMENT OUT ON RELEASE)
 local myFuncAssert1 = util.assertTypeFn({"Vector", "number"}, 1)
 local myFuncAssert2 = util.assertTypeFn({"string", "number"}, 1)

@@ -68,7 +68,71 @@ object_index.Equals = function(self, rhs)
 	return true
 end
 
-object_index.Evaluate = function(self)
+object_index.Greater = function(self, rhs)
+	for i=1,size do
+		local n_l = self[i]
+		local n_r = rhs[i]
+		
+		if n_l ~= n_r then
+			local highbit_l = n_l >> 63
+			local highbit_r = n_r >> 63
+			
+			if highbit_l ~= highbit_r then return highbit_l > highbit_r end
+			
+			local lowbits_l = n_l & 0x7FFFFFFFFFFFFFFF
+			local lowbits_r = n_r & 0x7FFFFFFFFFFFFFFF
+			
+			if lowbits_l ~= lowbits_r then return lowbits_l > lowbits_r end
+		end
+	end
+	return false
+end
+
+object_index.Lesser = function(self, rhs)
+	for i=1,size do
+		local n_l = self[i]
+		local n_r = rhs[i]
+		
+		if n_l ~= n_r then
+			local highbit_l = n_l >> 63
+			local highbit_r = n_r >> 63
+			
+			if highbit_l ~= highbit_r then return highbit_l < highbit_r end
+			
+			local lowbits_l = n_l & 0x7FFFFFFFFFFFFFFF
+			local lowbits_r = n_r & 0x7FFFFFFFFFFFFFFF
+			
+			if lowbits_l ~= lowbits_r then return lowbits_l < lowbits_r end
+		end
+	end
+	return false
+end
+
+object_index.LesserEqual = function(self, rhs)
+	return not self:Greater(rhs)
+end
+
+object_index.Compare = function(self, rhs)
+	for i=1,size do
+		local n_l = self[i]
+		local n_r = rhs[i]
+		
+		if n_l ~= n_r then
+			local highbit_l = n_l >> 63
+			local highbit_r = n_r >> 63
+			
+			if highbit_l ~= highbit_r then return highbit_l < highbit_r and -1 or 1 end
+			
+			local lowbits_l = n_l & 0x7FFFFFFFFFFFFFFF
+			local lowbits_r = n_r & 0x7FFFFFFFFFFFFFFF
+			
+			if lowbits_l ~= lowbits_r then return lowbits_l < lowbits_r and -1 or 1 end
+		end
+	end
+	return 0
+end
+
+object_index.Resolve = function(self)
 	for i=1,size do
 		if self[i] ~= 0 then
 			return true
@@ -90,8 +154,15 @@ object_meta.__bnot = function(self)
 end
 
 object_meta.__eq = function(self, rhs)
-	assert(self, "???")
 	return self:Equals(rhs)
+end
+
+object_meta.__lt = function(self, rhs)
+	return self:Lesser(rhs)
+end
+
+object_meta.__le = function(self, rhs)
+	return self:LesserEqual(rhs)
 end
 
 -- do TODO: fix

@@ -19,8 +19,16 @@ object_index.Init = function(self, num)
 	--operator: "And", "Or", nil. 
 end
 
+local disallowed_encapsulations = {
+	["Lesser"] = true,
+	["LesserEqual"] = true,
+	["Compare"] = true,
+}
+
 object_index.And = function(self, rhs)
 	AssertArg1(self); AssertArg2(rhs)
+	util.assert(not disallowed_encapsulations[self.operator], "Not allowed to encapsulate MusicAPI.Query with non-queryable result", 2)
+	util.assert(not disallowed_encapsulations[rhs.operator], "Not allowed to encapsulate MusicAPI.Query with non-queryable result", 2)
 	
 	local new = Query()
 	if self.operator then
@@ -44,7 +52,68 @@ object_index.And = function(self, rhs)
 				-- end
 			-- end
 		-- end
-		
+	end
+	return new
+end
+
+object_index.Lesser = function(self, rhs)
+	AssertArg1(self); AssertArg2(rhs)
+	util.assert(not disallowed_encapsulations[self.operator], "Not allowed to encapsulate MusicAPI.Query with non-queryable result", 2)
+	util.assert(not disallowed_encapsulations[rhs.operator], "Not allowed to encapsulate MusicAPI.Query with non-queryable result", 2)
+	
+	local new = Query()
+	if self.operator then
+		new.operator = "Lesser"
+		new.c1 = self
+		new.c2 = rhs
+	else
+		new.operator = "Lesser"
+		new.c1 = self.c1
+		new.c2 = rhs
+		-- if util.type(rhs) == "MusicAPI.Query" then
+			-- if not rhs.operator then
+				-- new.c2 = rhs.c1
+			-- else
+				-- if self.operator == rhs.operator then
+					-- if rhs.c1 == self.c1 then
+						-- new.c2 = rhs.c2
+					-- elseif rhs.c2 == self.c1 then
+						-- new.c2 = rhs.c1
+					-- end
+				-- end
+			-- end
+		-- end
+	end
+	return new
+end
+
+object_index.LesserEqual = function(self, rhs)
+	AssertArg1(self); AssertArg2(rhs)
+	util.assert(not disallowed_encapsulations[self.operator], "Not allowed to encapsulate MusicAPI.Query with non-queryable result", 2)
+	util.assert(not disallowed_encapsulations[rhs.operator], "Not allowed to encapsulate MusicAPI.Query with non-queryable result", 2)
+	
+	local new = Query()
+	if self.operator then
+		new.operator = "LesserEqual"
+		new.c1 = self
+		new.c2 = rhs
+	else
+		new.operator = "LesserEqual"
+		new.c1 = self.c1
+		new.c2 = rhs
+		-- if util.type(rhs) == "MusicAPI.Query" then
+			-- if not rhs.operator then
+				-- new.c2 = rhs.c1
+			-- else
+				-- if self.operator == rhs.operator then
+					-- if rhs.c1 == self.c1 then
+						-- new.c2 = rhs.c2
+					-- elseif rhs.c2 == self.c1 then
+						-- new.c2 = rhs.c1
+					-- end
+				-- end
+			-- end
+		-- end
 	end
 	return new
 end
@@ -69,23 +138,65 @@ end
 	-- return new
 -- end
 
-object_index.Evaluate = function(self, ...)
-	local args = {...}
+object_index.Compare = function(self, rhs)
+	AssertArg1(self); AssertArg2(rhs)
+	util.assert(not disallowed_encapsulations[self.operator], "Not allowed to encapsulate MusicAPI.Query with non-queryable result", 2)
+	util.assert(not disallowed_encapsulations[rhs.operator], "Not allowed to encapsulate MusicAPI.Query with non-queryable result", 2)
 	
-	local function eval_if_arg_num(n)
+	local new = Query()
+	if self.operator then
+		new.operator = "Compare"
+		new.c1 = self
+		new.c2 = rhs
+	else
+		new.operator = "Compare"
+		new.c1 = self.c1
+		new.c2 = rhs
+		-- if util.type(rhs) == "MusicAPI.Query" then
+			-- if not rhs.operator then
+				-- new.c2 = rhs.c1
+			-- else
+				-- if self.operator == rhs.operator then
+					-- if rhs.c1 == self.c1 then
+						-- new.c2 = rhs.c2
+					-- elseif rhs.c2 == self.c1 then
+						-- new.c2 = rhs.c1
+					-- end
+				-- end
+			-- end
+		-- end
+	end
+	return new
+end
+
+object_index.Resolve = function(self, ...)
+	local result = self:Evaluate(...)
+	if util.type(result) == "MusicAPI.Flagset" then
+		return result:Resolve()
+	else
+		return result
+	end
+end
+
+object_index.Evaluate = function(self, a, b, c, d)
+	local args = {a, b, c, d}
+	
+	local function eval_arg(n)
 		if type(n) == "number" then
 			return args[n]
+		elseif util.type(n) == "MusicAPI.Query" then
+			return n:Evaluate(a, b, c, d)
 		else
 			return n
 		end
 	end
 	
 	if self.operator then
-		local c1 = eval_if_arg_num(self.c1)
-		local c2 = eval_if_arg_num(self.c2)
+		local c1 = eval_arg(self.c1)
+		local c2 = eval_arg(self.c2)
 		return c1[self.operator](c1, c2)
 	else
-		return eval_if_arg_num(self.c1)
+		return eval_arg(self.c1)
 	end
 end
 
@@ -101,9 +212,8 @@ object_meta.__bnot = function(self)
 	return self:Not()
 end
 
-object_meta.__eq = function(self, rhs)
-	assert(self, "???")
-	return self:Equals(rhs)
+object_meta.__call = function(self, ...)
+	return self:Resolve(...)
 end
 
 class_index.Bit = function(i)
