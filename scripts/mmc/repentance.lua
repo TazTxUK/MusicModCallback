@@ -349,9 +349,6 @@ local weakmusicmgr = {}
 setmetatable(weakmusicmgr, weakmusicmgrfuncs)
 setmetatable(weakmusicmgrfuncs, overridemusicmgrfuncs)
 
---it seems that if this code runs on game start, it only looks at save file 1
---it will look at the correct save file after enabling the mod from the Mod menu of a particular save file
---nonetheless, I think we should load this info again upon starting or continuing a run
 function MMC.ResetSave()
 	modSaveData["inmirrorroom"] = false
 	modSaveData["inmirroredworld"] = false
@@ -373,6 +370,11 @@ function MMC.LoadSave()
 		else
 			modSaveData["usernolayers"] = false
 		end
+		
+		--make sure we have values for non-boolean data
+		if modSaveData["darkhome"] == nil then modSaveData["darkhome"] = 0 end
+		if modSaveData["secretjingles"] == nil then modSaveData["secretjingles"] = {} end
+		if modSaveData["railbuttons"] == nil then modSaveData["railbuttons"] = {} end
 	end)
 	if not success then
 		MMC.ResetSave()
