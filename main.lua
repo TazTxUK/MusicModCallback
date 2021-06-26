@@ -1,3 +1,3 @@
 if REPENTANCE then
-	require("scripts.mmc.repentance")
+	require("scripts.musicapi.repentance")
 end

@@ -1,4 +1,4 @@
-local Music = require("scripts.mmc.enums")
+local Music = require("scripts.musicapi.enums")
 
 local music_triggers = {
 	

@@ -1,7 +1,7 @@
 assert(_VERSION == "Lua 5.3", "The game is no longer using Lua 5.3! Alert the mod's developers!") --LuaJIT will remove integers. Watch for the update!
 
 local M = {} --MusicModCallback
-local Flagset = require "scripts.mmc.flagset"
+local Flagset = require "scripts.musicapi.flagset"
 
 M.TagBit = {}
 M.NextTagSlot = 0
@@ -22,7 +22,7 @@ function M.Flag(s)
 	end
 end
 
-for _, t in pairs(require "scripts.mmc.triggers") do
+for _, t in pairs(require "scripts.musicapi.triggers") do
 	for _, tag in ipairs(t.tags) do
 		M.AddTag(tag)
 	end

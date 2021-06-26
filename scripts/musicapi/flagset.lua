@@ -1,9 +1,11 @@
+local util = require "scripts.musicapi.util"
+
 local Flagset = {}
 local class_index = {}
 local class_meta = {__index = class_index}
 setmetatable(Flagset, class_meta)
 local object_index = {}
-local object_meta = {__index = object_index}
+local object_meta = {__index = object_index, __type = "MusicAPI.Flagset"}
 
 local size = 64 --const
 
@@ -14,6 +16,10 @@ object_index.Init = function(self)
 end
 
 object_index.And = function(self, rhs)
+	if util.type(rhs) == "MusicAPI.Query" then
+		return rhs:And(self)
+	end
+
 	local new = Flagset()
 	
 	for i=1,size do
@@ -24,6 +30,10 @@ object_index.And = function(self, rhs)
 end
 
 object_index.Or = function(self, rhs)
+	if util.type(rhs) == "MusicAPI.Query" then
+		return rhs:Or(self)
+	end
+
 	local new = Flagset()
 	
 	for i=1,size do
@@ -58,6 +68,15 @@ object_index.Equals = function(self, rhs)
 	return true
 end
 
+object_index.Evaluate = function(self)
+	for i=1,size do
+		if self[i] ~= 0 then
+			return true
+		end
+	end
+	return false
+end
+
 object_meta.__band = function(self, rhs)
 	return self:And(rhs)
 end
@@ -75,12 +94,12 @@ object_meta.__eq = function(self, rhs)
 	return self:Equals(rhs)
 end
 
-do
-	local f = ("%x"):rep(size)
-	object_meta.__tostring = function(self)
-		return string.format(f, table.unpack(self))
-	end
-end
+-- do TODO: fix
+	-- local f = ("%x"):rep(size)
+	-- object_meta.__tostring = function(self)
+		-- return string.format(f, table.unpack(self))
+	-- end
+-- end
 
 class_index.Bit = function(i)
 	local new = Flagset()
@@ -88,9 +107,9 @@ class_index.Bit = function(i)
 	return new
 end
 
-class_meta.__class = object_meta
+class_meta.__classmt = object_meta
 
-class_meta.__call = function(...)
+class_meta.__call = function(self, ...)
 	local obj = {}
 	setmetatable(obj, object_meta)
 	obj:Init(...)

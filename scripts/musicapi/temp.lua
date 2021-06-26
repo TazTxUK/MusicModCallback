@@ -28,6 +28,8 @@ CallArgument(1) is now a value
 
 if (JINGLE or ROOM_LIBRARY) or NOT (STAGE)
 
+MusicAPI.Query() & 
+
 ]]
 
 MusicAPI.AddLegacyCallback(MyMod, function() --V2 callback

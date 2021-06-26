@@ -1,4 +1,4 @@
-local music_triggers = require "scripts.mmc.triggers"
+local music_triggers = require "scripts.musicapi.triggers"
 
 if MMC then return end
 
@@ -11,8 +11,11 @@ MMC = {}
 MMC.Mod = MusicModCallback
 MMC.MusicTriggers = music_triggers
 
-Flagset = require "scripts.mmc.flagset"
-M = require "scripts.mmc.api"
+--these shouldnt be global on release
+Flagset = require "scripts.musicapi.flagset"
+M = require "scripts.musicapi.api"
+Util = require "scripts.musicapi.util"
+Query = require "scripts.musicapi.query"
 
 MMC.Version = "2.0"
 
