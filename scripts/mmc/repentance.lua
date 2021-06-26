@@ -1284,9 +1284,16 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 						satanfightstage = 2
 					end
 				elseif room:GetBossID() == 55 then
-					if Isaac.GetPlayer(0).Position.Y < 540 and satanfightstage == 0 and room:GetFrameCount() > 10 then
-						musicCrossfade(Music.MUSIC_SATAN_BOSS)
-						satanfightstage = 3
+					if satanfightstage == 0 and room:GetFrameCount() > 10 then
+						local playertable = Isaac.FindByType(EntityType.ENTITY_PLAYER,0) --variant 0 is true players, i.e. not co-op babies
+						for i,entity in pairs(playertable) do
+							local tempPlayer = entity:ToPlayer()
+							if tempPlayer and tempPlayer.Position.Y < 540 then
+								musicCrossfade(Music.MUSIC_SATAN_BOSS)
+								satanfightstage = 3
+								break
+							end
+						end
 					end
 				else
 					satanfightstage = 0
@@ -1398,9 +1405,13 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				if door.State == DoorState.STATE_OPEN and (doorprevstates[i] == DoorState.STATE_CLOSED or door.TargetRoomType == RoomType.ROOM_ULTRASECRET) then
 					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and not modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] then
 						modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] = true
-						local player = Isaac.GetPlayer()
 						local icanseeforever = level:GetCanSeeEverything()
-						local xrayvision = player:HasCollectible(CollectibleType.COLLECTIBLE_XRAY_VISION)
+						local xrayvision = false
+						local playertable = Isaac.FindByType(EntityType.ENTITY_PLAYER,0) --variant 0 is true players, i.e. not co-op babies
+						for i,entity in pairs(playertable) do
+							local tempPlayer = entity:ToPlayer()
+							xrayvision = xrayvision or (tempPlayer and tempPlayer:HasCollectible(CollectibleType.COLLECTIBLE_XRAY_VISION))
+						end
 						if (not icanseeforever and not xrayvision) or door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
 							musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
 						end
