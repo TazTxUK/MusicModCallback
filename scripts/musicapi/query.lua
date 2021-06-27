@@ -12,7 +12,10 @@ local size = 64 --const
 local AssertArg1 = util.assertTypeFn({"MusicAPI.Query"}, 1)
 local AssertArg2 = util.assertTypeFn({"MusicAPI.Query", "MusicAPI.Flagset"}, 2)
 
+local AssertInitArg = util.assertTypeFn({"MusicAPI.Flagset", "number", "nil"}, 1)
+
 object_index.Init = function(self, num)
+	AssertInitArg(num)
 	self.c1 = num or 1
 	--c1: comparate 1: stores an arg number or Query
 	--c2: comparate 2: nil if no operator, otherwise same as c1
@@ -178,6 +181,7 @@ object_index.Resolve = function(self, ...)
 	end
 end
 
+
 object_index.Evaluate = function(self, a, b, c, d)
 	local args = {a, b, c, d}
 	
@@ -194,6 +198,8 @@ object_index.Evaluate = function(self, a, b, c, d)
 	if self.operator then
 		local c1 = eval_arg(self.c1)
 		local c2 = eval_arg(self.c2)
+		
+		GVM.Print(c1, c2, self.operator)
 		return c1[self.operator](c1, c2)
 	else
 		return eval_arg(self.c1)

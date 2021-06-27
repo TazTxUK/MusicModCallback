@@ -57,6 +57,19 @@ function util.cout(...)
 	end
 end
 
+function util.capitalCase(s)
+	--This MIGHT be optimisable using patterns.
+	local str = s:lower():gsub("_", " ")
+	local next_letter = 1
+	while true do
+		str = str:sub(1, next_letter - 1) .. str:sub(next_letter, next_letter):upper() .. str:sub(next_letter + 1, -1)
+		next_letter = str:find(" ", next_letter + 1)
+		if next_letter == nil then break end
+		next_letter = next_letter + 1
+	end
+	return str
+end
+
 --TEST (COMMENT OUT ON RELEASE)
 local myFuncAssert1 = util.assertTypeFn({"Vector", "number"}, 1)
 local myFuncAssert2 = util.assertTypeFn({"string", "number"}, 1)

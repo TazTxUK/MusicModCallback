@@ -7,7 +7,7 @@ setmetatable(Flagset, class_meta)
 local object_index = {}
 local object_meta = {__index = object_index, __type = "MusicAPI.Flagset"}
 
-local size = 64 --const
+local size = 16 --const
 
 object_index.Init = function(self)
 	for i=1,size do
@@ -56,7 +56,11 @@ end
 object_index.SetBit = function(self, n, bool)
 	local pos1 = math.floor(n / 64)
 	local pos2 = n - pos1 * 64
-	self[pos1 + 1] = self[pos1 + 1] | (1 << pos2)
+	if bool then
+		self[pos1 + 1] = self[pos1 + 1] | (1 << pos2)
+	else
+		self[pos1 + 1] = self[pos1 + 1] & ~(1 << pos2)
+	end
 end
 
 object_index.Equals = function(self, rhs)

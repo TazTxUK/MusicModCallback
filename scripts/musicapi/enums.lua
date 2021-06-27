@@ -1,4 +1,4 @@
-return {
+local NewMusic = {
 	MUSIC_NULL = 0,
 	MUSIC_BASEMENT = Isaac.GetMusicIdByName("Basement"),
 	MUSIC_CAVES = Isaac.GetMusicIdByName("Caves"),
@@ -102,3 +102,14 @@ return {
 	MUSIC_MINESHAFT_ESCAPE = Isaac.GetMusicIdByName("Mineshaft Escape"),
 	MUSIC_REVERSE_GENESIS = Isaac.GetMusicIdByName("Genesis (reversed)"),
 }
+
+for _,n in pairs(NewMusic) do
+	if not NewMusic.NUM_MUSIC or n > NewMusic.NUM_MUSIC then
+		NewMusic.NUM_MUSIC = n
+	end
+end
+NewMusic.NUM_MUSIC = NewMusic.NUM_MUSIC + 1
+
+local OldMusic = Music
+
+return NewMusic, OldMusic
