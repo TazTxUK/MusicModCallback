@@ -198,8 +198,7 @@ object_index.Evaluate = function(self, a, b, c, d)
 	if self.operator then
 		local c1 = eval_arg(self.c1)
 		local c2 = eval_arg(self.c2)
-		
-		GVM.Print(c1, c2, self.operator)
+
 		return c1[self.operator](c1, c2)
 	else
 		return eval_arg(self.c1)
