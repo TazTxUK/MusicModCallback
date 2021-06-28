@@ -1,22 +1,21 @@
 local MusicAPI = require("scripts.musicapi.api")
+local cache = require("scripts.musicapi.cache")
 
 local json = require("json")
 
 MusicAPI.Mod = RegisterMod("Music API", 1)
 local mod = MusicAPI.Mod
 
-local modSaveData = {}
+mod.SaveData = {}
+mod.Manager = MusicManager()
 
-local musicmgr = MusicManager()
+mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
+	local trigger_name = MusicAPI.GetRoomEntryTriggerName()
+	MusicAPI.SetRoomTriggerName(trigger_name)
+	MusicAPI.PlayTrigger(trigger_name)
+end)
 
-local addMusicCallback
-local removeMusicCallback
-local musicQueue
-local musicCrossfade
-local musicPlay
-
-local Callbacks = {}
-local usernolayers = false
+--[[
 local roomclearbefore = false
 local challengedonebefore = false
 local challengeactivebefore = false
@@ -67,28 +66,28 @@ musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO] = {
 local soundJingleTimer --renamed treasure_jingle_timer
 local soundJingleVolume = false --renamed treasure_volume
 local soundJingles = {}
---[[
+
 --we can uncomment and finish up this block once custom sounds are fixed
 --replaced Beast Growl (sound id 815) with .wav trasure jingles during testing
-soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_0] = {
-	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 1")
-}
-soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_1] = {
-	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 2")
-}
-soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2] = {
-	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 3")
-}
-soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3] = {
-	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 4")
-}
-soundJingles[Music.MUSIC_JINGLE_SECRETROOM_FIND] = {
-	["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Secret Room Jingle")
-}
-soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
-	["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Strange Door Jingle")
-}
---]]
+-- soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_0] = {
+	-- ["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 1")
+-- }
+-- soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_1] = {
+	-- ["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 2")
+-- }
+-- soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2] = {
+	-- ["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 3")
+-- }
+-- soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3] = {
+	-- ["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 4")
+-- }
+-- soundJingles[Music.MUSIC_JINGLE_SECRETROOM_FIND] = {
+	-- ["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Secret Room Jingle")
+-- }
+-- soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
+	-- ["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Strange Door Jingle")
+-- }
+
 
 local stageapiexists = false
 
@@ -1214,3 +1213,4 @@ MMC.InCustomStage = function() return inbadstage end
 MMC.Manager = function() return overridemusicmgr end
 MMC.DisableMusicLayers = false
 MMC.Initialised = true
+]]

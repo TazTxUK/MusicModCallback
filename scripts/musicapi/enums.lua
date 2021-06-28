@@ -110,6 +110,4 @@ for _,n in pairs(NewMusic) do
 end
 NewMusic.NUM_MUSIC = NewMusic.NUM_MUSIC + 1
 
-local OldMusic = Music
-
-return NewMusic, OldMusic
+return {Music = NewMusic, MusicOld = Music}
