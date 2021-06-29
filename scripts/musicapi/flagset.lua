@@ -178,7 +178,7 @@ end
 
 class_index.Bit = function(i)
 	local new = Flagset()
-	new:SetBit(i)
+	new:SetBit(i, true)
 	return new
 end
 

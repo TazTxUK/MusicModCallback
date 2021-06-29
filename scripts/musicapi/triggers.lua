@@ -25,6 +25,11 @@ if the music will be replaced successfully or not, and it can be redirected.
 ]]
 
 local trigger_table = {
+	["API_NOTHING"] = {
+		track = Music.MUSIC_MUSICAPI_NOTHING,
+		tags = {"API"},
+	},
+
 	["STAGE_NULL"] = {
 		track = Music.MUSIC_NULL,
 		tags = {"STAGE"},
@@ -412,7 +417,6 @@ local trigger_table = {
 			Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3
 		},
 		tags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
-	}
 	},
 	["JINGLE_CHALLENGE_NORMAL_OUTRO"] = {
 		track = Music.MUSIC_JINGLE_CHALLENGE_OUTRO,

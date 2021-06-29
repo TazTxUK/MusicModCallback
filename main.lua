@@ -8,23 +8,36 @@ MusicOld = enums.MusicOld
 MusicAPI = require("scripts.musicapi.api")
 MMC = require("scripts.musicapi.legacy")
 
-require("scripts.musicapi.triggers")
 require("scripts.musicapi.gamecallbacks")
 
-Isaac.ConsoleOutput("MusicAPI loaded successfully.\n")
+MusicAPI.ResetTriggers()
 
-MusicAPI.AddCallback(1, function(...)
-	GVM.Print("Hello!",...)
-end, 1)
+Isaac.ConsoleOutput("MusicAPI loaded successfully.\n")
 
 local mod = RegisterMod("", 1)
 
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
-	local s = "(NONE)"
+	local s1 = "???"
+	local s2 = "???"
 	local current_track = MusicManager():GetCurrentMusicID()
+	local queued_track = MusicManager():GetQueuedMusicID()
 	for a,b in pairs(Music) do
-		if b == current_track then s = a end
+		if b == current_track then s1 = a end
+		if b == queued_track then s2 = a end
 	end
-	Isaac.RenderText(s, 50, 50, 0.8, 0.8, 1.0, 1.0)
-	Isaac.RenderText(MusicAPI.GetRoomTriggerName() or "(NONE)", 50, 62, 0.8, 0.8, 1.0, 1.0)
+	local y = 50
+	Isaac.RenderText("MusicManager Queue:", 50, y, 0.4, 0.4, 1.0, 1.0)
+	y = y + 12
+	Isaac.RenderText(s1, 50, y, 0.8, 0.8, 1.0, 1.0)
+	y = y + 12
+	Isaac.RenderText(s2, 50, y, 0.8, 0.8, 1.0, 1.0)
+	y = y + 12
+	-- Isaac.RenderText(MusicAPI.GetRoomTriggerName() or "(NONE)", 50, y, 0.8, 0.8, 1.0, 1.0)
+	-- y = y + 12
+	Isaac.RenderText("MusicAPI Queue:", 50, y, 0.4, 0.4, 1.0, 1.0)
+	y = y + 12
+	for _, item in ipairs(MusicAPI.Queue) do
+		Isaac.RenderText(item, 50, y, 0.2, 0.2, 1.0, 1.0)
+		y = y + 12
+	end
 end)

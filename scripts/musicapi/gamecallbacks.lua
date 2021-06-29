@@ -3,16 +3,16 @@ local cache = require("scripts.musicapi.cache")
 
 local json = require("json")
 
-MusicAPI.Mod = RegisterMod("Music API", 1)
+MusicAPI.Mod = RegisterMod("MusicAPI", 1)
 local mod = MusicAPI.Mod
 
 mod.SaveData = {}
 mod.Manager = MusicManager()
 
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
-	local trigger_name = MusicAPI.GetRoomEntryTriggerName()
-	MusicAPI.SetRoomTriggerName(trigger_name)
-	MusicAPI.PlayTrigger(trigger_name)
+	local trigger_names = {MusicAPI.GetRoomEntryTriggerName()}
+	MusicAPI.SetRoomTriggerName(trigger_names[1])
+	MusicAPI.PlayTriggers(trigger_names)
 end)
 
 --[[

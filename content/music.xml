@@ -1,4 +1,9 @@
 <music root="music/">
+	<!-- MUSICAPI BEGIN -->
+	<track name="MusicAPI Queue Pop" path="" loop="true" />
+	<track name="MusicAPI Nothing" path="" loop="true" />
+	<!-- MUSICAPI END -->
+	
 	<track name="Basement" intro="Diptera Sonata Intro.ogg" path="Diptera Sonata(Basement).ogg" layerintro="Diptera Layer Intro.ogg" layer="Diptera Layer.ogg" loop="true" />
 	<track name="Caves" intro="The Caves Intro.ogg" path="The Caves.ogg" layerintro="The Caves Layer Intro.ogg" layer="The Caves Layer.ogg" loop="true" />
 	<track name="Depths" intro="The Depths Intro.ogg" path="The Depths.ogg" layerintro="The Depths Layer Intro.ogg" layer="The Depths Layer.ogg" loop="true" />

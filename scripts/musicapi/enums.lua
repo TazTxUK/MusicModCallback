@@ -1,4 +1,7 @@
 local NewMusic = {
+	MUSIC_MUSICAPI_QUEUE_POP = Isaac.GetMusicIdByName("MusicAPI Queue Pop"),
+	MUSIC_MUSICAPI_NOTHING = Isaac.GetMusicIdByName("MusicAPI Nothing"),
+
 	MUSIC_NULL = 0,
 	MUSIC_BASEMENT = Isaac.GetMusicIdByName("Basement"),
 	MUSIC_CAVES = Isaac.GetMusicIdByName("Caves"),
