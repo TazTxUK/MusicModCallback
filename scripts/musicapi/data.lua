@@ -69,6 +69,19 @@ floors[LevelStage.STAGE8] = {
 	[StageType.STAGETYPE_WOTL] = "STAGE_HOME",
 }
 
+local floors_dim1 = {}
+data.FloorsAlternate = floors_dim1
+
+floors_dim1[LevelStage.STAGE1_2] = {
+	[StageType.STAGETYPE_REPENTANCE] = "STAGE_MIRROR_DOWNPOUR",
+	[StageType.STAGETYPE_REPENTANCE_B] = "STAGE_MIRROR_DROSS",
+}
+
+floors_dim1[LevelStage.STAGE2_2] = {
+	[StageType.STAGETYPE_REPENTANCE] = "STAGE_MINESHAFT_AMBIENT",
+	[StageType.STAGETYPE_REPENTANCE_B] = "STAGE_MINESHAFT_AMBIENT",
+}
+
 local floors_greed = {}
 data.FloorsGreed = floors_greed
 
@@ -88,17 +101,20 @@ local bosses = {}
 data.Bosses = bosses
 
 bosses[6] = "BOSS_MOM"
--- bosses[8] = "BOSS_MOMS_HEART_WOMB"
+bosses[8] = "BOSS_MOMS_HEART_WOMB"
 bosses[25] = "BOSS_IT_LIVES"
 bosses[24] = "BOSS_SATAN"
 bosses[39] = "BOSS_ISAAC"
-bosses[40] = "BOSS_BLUE_BABY_CHEST"
+bosses[40] = "BOSS_BLUE_BABY"
 bosses[54] = "BOSS_LAMB"
 bosses[55] = "BOSS_SATAN_INACTIVE"
 bosses[62] = "BOSS_ULTRA_GREED"
-bosses[63] = "BOSS_BLUE_BABY_BLUE_WOMB"
+bosses[63] = "BOSS_HUSH_FIRST"
 bosses[70] = "BOSS_DELIRIUM"
 bosses[88] = "BOSS_MOTHER"
+
+--SPECIAL CASES: IF TRIGGERS DIFFER PER FLOOR
+bosses[8 + (LevelStage.STAGE3_2 << 16)] = "BOSS_MOMS_HEART_MAUSOLEUM"
 
 local rooms = {}
 data.Rooms = rooms
@@ -130,6 +146,14 @@ rooms[RoomType.ROOM_GREED_EXIT] = "ROOM_GREED_EXIT"
 rooms[RoomType.ROOM_PLANETARIUM] = "ROOM_PLANETARIUM"
 rooms[RoomType.ROOM_TELEPORTER] = "ROOM_TELEPORTER"
 rooms[RoomType.ROOM_TELEPORTER_EXIT] = "ROOM_TELEPORTER_EXIT"
+rooms[RoomType.ROOM_SECRET_EXIT or 27] = "ROOM_SECRET_EXIT"
+rooms[RoomType.ROOM_BLUE or 28] = "ROOM_BLUE"
 rooms[RoomType.ROOM_ULTRASECRET] = "ROOM_ULTRASECRET"
+
+local gridrooms = {}
+data.GridRooms = gridrooms
+
+gridrooms[GridRooms.ROOM_ROTGUT_DUNGEON1_IDX] = "BOSS_REPENTANCE"
+gridrooms[GridRooms.ROOM_ROTGUT_DUNGEON2_IDX] = "BOSS_REPENTANCE"
 
 return data

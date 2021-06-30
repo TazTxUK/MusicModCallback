@@ -1,4 +1,4 @@
-local music_triggers = require "scripts.musicapi.triggers"
+local music_tracks = require "scripts.musicapi.tracks"
 
 if MMC then return end
 
@@ -9,7 +9,7 @@ local modSaveData = {}
 
 MMC = {}
 MMC.Mod = MusicModCallback
-MMC.MusicTriggers = music_triggers
+MMC.MusicTracks = music_tracks
 
 --these shouldnt be global on release
 Flagset = require "scripts.musicapi.flagset"
@@ -940,7 +940,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 				modSaveData["inmirroredworld"] = (not modSaveData["inmirroredworld"])
 			end
 		elseif previousinmineroom and modSaveData["inmineroom"] then
-			--I'm concerned that a teleporting item or the D7 (restart room) could trigger this
+			--I'm concerned that a teleporting item or the D7 (restart room) could track this
 			modSaveData["inmineshaft"] = (not modSaveData["inmineshaft"])
 		end
 		
@@ -1253,7 +1253,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		previousgreedwave = currentgreedwave
 	else --Normal or Hard Mode (i.e. not Greed Mode)
 		if room:GetType() == RoomType.ROOM_CHALLENGE or room:GetType() == RoomType.ROOM_BOSSRUSH then
-			--for some reason boss rush music wasnt being triggered here
+			--for some reason boss rush music wasnt being tracked here
 			--but was working fine in getMusicTrack()
 			if challengeactivenow and not challengeactivebefore then
 				local challengeMusicToPlay
