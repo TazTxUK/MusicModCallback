@@ -242,7 +242,7 @@ local previousgreedwave = 0
 local previousbosscount = 0
 local waitingforgamestjingle = true
 local satanfightstage = 0
-local doorprevstates = {}
+local doorprevvariants = {}
 local inbadstage = false
 local strangedoorstatebefore = DoorState.STATE_INIT
 local foundknifepiecebefore = false
@@ -900,7 +900,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		for i=0,7 do
 			local door = room:GetDoor(i)
 			if door then
-				doorprevstates[i] = door.State
+				doorprevvariants[i] = door:GetVariant()
 				
 				if door.TargetRoomIndex == -100 then --the Mirror
 					modSaveData["inmirrorroom"] = true
@@ -1402,7 +1402,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		local door = room:GetDoor(i)
 		if door then
 			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET or door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
-				if door.State == DoorState.STATE_OPEN and (doorprevstates[i] == DoorState.STATE_CLOSED or door.TargetRoomType == RoomType.ROOM_ULTRASECRET) then
+				if door:GetVariant() == DoorVariant.DOOR_UNLOCKED and (doorprevvariants[i] == DoorVariant.DOOR_HIDDEN or door.TargetRoomType == RoomType.ROOM_ULTRASECRET) then
 					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and not modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] then
 						modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] = true
 						local icanseeforever = level:GetCanSeeEverything()
@@ -1424,7 +1424,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	for i=0,7 do
 		local door = room:GetDoor(i)
 		if door then
-			doorprevstates[i] = door.State
+			doorprevvariants[i] = door:GetVariant()
 		end
 	end
 	challengedonebefore = challengedonenow
