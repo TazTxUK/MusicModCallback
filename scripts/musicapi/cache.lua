@@ -18,6 +18,7 @@ function cache.ReloadRoomCache()
 	cache.StageType = cache.Level:GetStageType()
 	cache.CurrentRoomIndex = cache.Level:GetCurrentRoomIndex()
 	cache.RoomType = cache.Room:GetType()
+	cache.Seeds = cache.Game:GetSeeds()
 	
 	--Dimension
 	if GetPtrHash(cache.RoomDescriptor) == GetPtrHash(cache.Level:GetRoomByIdx(cache.CurrentRoomIndex, 0)) then
@@ -36,6 +37,9 @@ function cache.ReloadRoomCache()
 		cache.Game:GetStateFlag(GameStateFlag.STATE_MAUSOLEUM_HEART_KILLED) and 
 		cache.Stage == STAGE3_2 and
 		(cache.StageType == STAGETYPE_REPENTANCE or cache.StageType == STAGETYPE_REPENTANCE_B)
+		
+	--Additional
+	cache.CHALLENGE_DELETE_THIS = cache.Game.Challenge == Challenge.CHALLENGE_DELETE_THIS
 end
 cache.ReloadRoomCache()
 

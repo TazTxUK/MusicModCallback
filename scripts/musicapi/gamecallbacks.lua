@@ -60,7 +60,7 @@ local PostRender_State_JumpTable = {
 		
 		if MusicAPI.State.Phase == 2 then
 			if cache.CountBosses == 0 then
-				MusicAPI.PlayTracks{MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR"}
+				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR")
 				MusicAPI.ClearState()
 			end
 		end
@@ -68,7 +68,7 @@ local PostRender_State_JumpTable = {
 	Miniboss = function()
 		if MusicAPI.State.Phase == 2 then
 			if cache.CountBosses == 0 and cache.Room:IsClear() then
-				MusicAPI.PlayTracks{"JINGLE_MINIBOSS_CLEAR", "ROOM_MINIBOSS_CLEAR"}
+				MusicAPI.PlayTrack("JINGLE_MINIBOSS_CLEAR", "ROOM_MINIBOSS_CLEAR")
 				MusicAPI.ClearState()
 			end
 		end

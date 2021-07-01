@@ -133,15 +133,26 @@ function MusicAPI.AddTrack(name, tags, music, persistent)
 end
 
 --[[
-MusicAPI.GetStageTrack(LevelStage levelstage, StageType stagetype, Dimension dimension)
+MusicAPI.GetStageTrack(LevelStage levelstage, StageType stagetype, Dimension dimension, boolean glitched)
 
 Returns the track name of the given stage (eg. "STAGE_BASEMENT"), regardless of room.
 Arguments omitted will use the current level as default.
+
+If glitched is true, then a different track is selected for the floor and is returned instead.
+(for the Delete This challenge). False to disable the effect.
 ]]
-function MusicAPI.GetStageTrack(levelstage, stagetype, dimension)
+function MusicAPI.GetStageTrack(levelstage, stagetype, dimension, glitched)
 	if not levelstage then levelstage = cache.Stage end
 	if not stagetype then stagetype = cache.StageType end
 	if not dimension then dimension = cache.Dimension end
+	if glitched == nil then glitched = cache.CHALLENGE_DELETE_THIS end
+	
+	if glitched then
+		local seed = cache.Seeds:GetStartSeed()
+		local rng = RNG()
+		rng:SetSeed(seed + levelstage << 8 + stagetype << 2, 0x1C)
+		return data.FloorsRand[rng:RandomInt(#data.FloorsRand) + 1]
+	end
 	
 	local f
 	if dimension == 0 then
@@ -337,7 +348,7 @@ do
 		[RoomType.ROOM_CHALLENGE] = MusicAPI.GetChallengeRoomTrack,
 	}
 
-	function MusicAPI.GetRoomEntryTrack(room_type)
+	function MusicAPI.GetRoomEntryTrack(room_type, dimension)
 		local room_type = room_type or cache.Room:GetType()
 		local room_track_name = data.Rooms[room_type]
 		local room_track = MusicAPI.Tracks[room_track_name]
@@ -348,19 +359,21 @@ do
 			return "STATE_MINESHAFT_ESCAPE"
 		end
 		
-		if data.GridRooms[cache.CurrentRoomIndex] then
-			return data.GridRooms[cache.CurrentRoomIndex] 
+		if data.GridRooms[cache.CurrentRoomIndex] then -- Special grid rooms
+			return data.GridRooms[cache.CurrentRoomIndex]
 		end
 		
-		if room_track and room_track.Music then
-			return room_track_name
-		end
-		
-		local jump_table_func = jump_table[room_type]
-		if jump_table_func then
-			local a, b, c, d, e, f = jump_table_func()
-			if MusicAPI.IsTrackPlayable(a) then
-				return a, b, c, d, e, f
+		if cache.Dimension == 0 or room_type == RoomType.ROOM_BOSS then
+			if room_track and room_track.Music then -- Special rooms in data.lua
+				return room_track_name
+			end
+			
+			local jump_table_func = jump_table[room_type] -- Special rooms mapped to functions
+			if jump_table_func then
+				local a, b, c, d, e, f = jump_table_func()
+				if MusicAPI.IsTrackPlayable(a) then
+					return a, b, c, d, e, f
+				end
 			end
 		end
 		
@@ -527,20 +540,10 @@ MusicAPI.ForcePlayTrack(string track_name)
 Used internally.
 ]]
 function MusicAPI.ForcePlayTrack(track_name)
-	MusicAPI.Queue = {track_name}
-	MusicAPI.Crossfade()
-end
-
---[[
-MusicAPI.EvaluateTrack(string track_name)
-
-Returns the music ID associated with the track. If no tracks are associated,
-returns nil.
-]]
-function MusicAPI.EvaluateTrack(track_name)
-	local track_music = MusicAPI.GetTrackMusic(track_name)
-	if track_music then
-		return track_music
+	local music = MusicAPI.GetTrackMusic(track_name)
+	if music then
+		MusicAPI.Queue = {track_name}
+		MusicAPI.Crossfade(music)
 	end
 end
 
@@ -570,10 +573,8 @@ nothing happens.
 ]]
 function MusicAPI.QueueTrack(track_name)
 	--if MusicAPI.TrackIsPlayable(track_name) then
-	
 	if #MusicAPI.Queue == 0 then
-		MusicAPI.Queue = {track_name}
-		MusicAPI.Crossfade()
+		MusicAPI.ForcePlayTrack(track_name)
 	else
 		table.insert(MusicAPI.Queue, track_name)
 	end
@@ -615,7 +616,7 @@ Use after editing the queue directly.
 function MusicAPI.UseQueue()
 	local queue_1 = MusicAPI.Queue[1]
 	if queue_1 then
-		MusicAPI.Crossfade(MusicAPI.EvaluateTrack(queue_1))
+		MusicAPI.Crossfade(MusicAPI.GetTrackMusic(queue_1))
 	else
 		MusicAPI.Manager:Crossfade(Music.MUSIC_MUSICAPI_NOTHING)
 	end
@@ -716,7 +717,11 @@ Runs all OnPlay callbacks.
 function MusicAPI.RunOnPlayCallbacks(track_name, track_id)
 	if not track_name then
 		track_name = MusicAPI.Queue[1]
-		track_id = MusicAPI.Manager:GetCurrentMusicID()
+		if MusicAPI.IsTrackPlayable(track_name) then
+			track_id = MusicAPI.Manager:GetCurrentMusicID()
+		else
+			track_id = 0
+		end
 	end
 	
 	for _, callback in ipairs(MusicAPI.Callbacks.OnPlay) do

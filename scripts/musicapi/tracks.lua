@@ -31,7 +31,7 @@ local track_table = {
 	},
 
 	["STAGE_NULL"] = {
-		music = Music.MUSIC_NULL,
+		music = Music.MUSIC_MUSICAPI_NOTHING,
 		tags = {"STAGE"},
 	},
 	

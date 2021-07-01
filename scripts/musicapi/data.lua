@@ -156,4 +156,34 @@ data.GridRooms = gridrooms
 gridrooms[GridRooms.ROOM_ROTGUT_DUNGEON1_IDX] = "BOSS_REPENTANCE"
 gridrooms[GridRooms.ROOM_ROTGUT_DUNGEON2_IDX] = "BOSS_REPENTANCE"
 
+local floors_rand = {}
+data.FloorsRand = floors_rand
+
+floors_rand[1] = "STAGE_NULL"
+floors_rand[2] = "STAGE_BASEMENT"
+floors_rand[3] = "STAGE_CELLAR"
+floors_rand[4] = "STAGE_BURNING_BASEMENT"
+floors_rand[5] = "STAGE_DOWNPOUR"
+floors_rand[6] = "STAGE_DROSS"
+floors_rand[7] = "STAGE_CAVES"
+floors_rand[8] = "STAGE_CATACOMBS"
+floors_rand[9] = "STAGE_FLOODED_CAVES"
+floors_rand[10] = "STAGE_MINES"
+floors_rand[11] = "STAGE_ASHPIT"
+floors_rand[12] = "STAGE_DEPTHS"
+floors_rand[13] = "STAGE_NECROPOLIS"
+floors_rand[14] = "STAGE_DANK_DEPTHS"
+floors_rand[15] = "STAGE_MAUSOLEUM"
+floors_rand[16] = "STAGE_GEHENNA"
+floors_rand[17] = "STAGE_WOMB"
+floors_rand[18] = "STAGE_UTERO"
+floors_rand[19] = "STAGE_SCARRED_WOMB"
+floors_rand[20] = "STAGE_CORPSE"
+floors_rand[21] = "STAGE_MORTIS"
+floors_rand[22] = "STAGE_SHEOL"
+floors_rand[23] = "STAGE_CATHEDRAL"
+floors_rand[24] = "STAGE_DARK_ROOM"
+floors_rand[25] = "STAGE_CHEST"
+floors_rand[26] = "STAGE_VOID"
+
 return data
