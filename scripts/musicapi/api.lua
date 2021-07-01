@@ -81,7 +81,7 @@ local mt_track = {
 	-- __gvmkcolor = KColor(51/255, 231/255, 1.0, 1.0),
 }
 
-function MusicAPI.AddTrack(name, tags, music)
+function MusicAPI.AddTrack(name, tags, music, persistent)
 	local track = {}
 	
 	--Set metatable
@@ -105,6 +105,9 @@ function MusicAPI.AddTrack(name, tags, music)
 	
 	--Flags
 	track.Flags = Flagset()
+	
+	--Persistent
+	track.Persistent = persistent
 	
 	--Assign Tags to Flags
 	for _, tag in ipairs(tags) do
@@ -295,6 +298,29 @@ function MusicAPI.GetMinibossRoomEntryTrack(boss_id, level_stage, ...)
 end
 
 --[[
+MusicAPI.GetChallengeRoomTrack()
+
+Get the tracks used as if the current room was a challenge room.
+Used internally.
+]]
+function MusicAPI.GetChallengeRoomTrack()
+	-- TAZ: This IF is a quick way of getting this to work for vanilla but may need to be changed later
+	if cache.Stage ~= cache.AbsoluteStage then 
+		if cache.RoomDescriptor.ChallengeDone then
+			return "ROOM_CHALLENGE_BOSS_CLEAR"
+		else
+			return "ROOM_CHALLENGE_BOSS_INACTIVE"
+		end
+	else
+		if cache.RoomDescriptor.ChallengeDone then
+			return "ROOM_CHALLENGE_NORMAL_CLEAR"
+		else
+			return "ROOM_CHALLENGE_NORMAL_INACTIVE"
+		end
+	end
+end
+
+--[[
 MusicAPI.GetRoomEntryTrack(RoomType|nil room_type)
 
 Gets the track name used for room entry.
@@ -308,13 +334,19 @@ do
 		[RoomType.ROOM_TREASURE] = MusicAPI.GetTreasureRoomTrack,
 		[RoomType.ROOM_BOSS] = MusicAPI.GetBossRoomEntryTrack,
 		[RoomType.ROOM_MINIBOSS] = MusicAPI.GetMinibossRoomEntryTrack,
-		-- [RoomType.ROOM_CHALLENGE] = ,
+		[RoomType.ROOM_CHALLENGE] = MusicAPI.GetChallengeRoomTrack,
 	}
 
 	function MusicAPI.GetRoomEntryTrack(room_type)
 		local room_type = room_type or cache.Room:GetType()
 		local room_track_name = data.Rooms[room_type]
 		local room_track = MusicAPI.Tracks[room_track_name]
+		
+		if cache.STATE_BACKWARDS_PATH then
+			return "STATE_ASCENT"
+		elseif cache.STATE_MINESHAFT_ESCAPE then
+			return "STATE_MINESHAFT_ESCAPE"
+		end
 		
 		if data.GridRooms[cache.CurrentRoomIndex] then
 			return data.GridRooms[cache.CurrentRoomIndex] 
@@ -326,8 +358,20 @@ do
 		
 		local jump_table_func = jump_table[room_type]
 		if jump_table_func then
-			return jump_table_func()
+			local a, b, c, d, e, f = jump_table_func()
+			if MusicAPI.IsTrackPlayable(a) then
+				return a, b, c, d, e, f
+			end
 		end
+		
+		-- RANDOM FLOOR THEMES
+		-- local v1 = (cache.RoomDescriptor.DecorationSeed % 8) + 1
+		-- local v2 = (cache.RoomDescriptor.DecorationSeed >> 8) % 5
+		-- if v2 >= 3 then v2 = v2 + 1 end
+		-- return MusicAPI.GetStageTrack(v1, v2)
+		
+		-- MAUSO ALL DAY EVERY DAY
+		-- return "STAGE_MAUSOLEUM"
 		
 		return MusicAPI.GetStageTrack()
 	end
@@ -380,18 +424,25 @@ function MusicAPI.StartMinibossState()
 end
 
 --[[
-MusicAPI.StartSatanState()
+MusicAPI.StartBossAmbushState(string ambush_theme, string ambush_end_jingle, boolean waiting)
 
-Sets MusicAPI to treat the current room like a boss fight.
+Sets MusicAPI to treat the current room like a boss ambush (boss challenge room).
 
-Bosses have to be in the room, or else the state will jump straight
-to the boss defeat jingle.
+If waiting is true, MusicAPI waits for Room_IsAmbushActive before starting, otherwise the ambush
+is started straight away.
 ]]
-function MusicAPI.StartSatanState(include_jingle)
+function MusicAPI.StartAmbushState(ambush_theme, ambush_end_jingle, ambush_clear, waiting)
 	MusicAPI.State = {
-		Type = "SatanBoss",
-		Phase = include_jingle and 1 or 2,
+		Type = "Ambush",
+		Phase = waiting and 1 or 2,
+		TrackMain = ambush_theme,
+		TrackEnd = ambush_end_jingle,
+		TrackClear = ambush_clear,
 	}
+	
+	if not waiting then
+		MusicAPI.PlayTrack(ambush_theme)
+	end
 end
 
 --[[
@@ -429,31 +480,55 @@ function MusicAPI.SetRoomTrack(track_name)
 end
 
 --[[
-MusicAPI.PlayTrack(string track_name)
+MusicAPI.PlayJingle(string track_name)
+
+Inserts a jingle before the current queue.
+]]
+function MusicAPI.PlayJingle(track_name)
+	table.insert(MusicAPI.Queue, 1, track_name)
+	MusicAPI.UseQueue()
+end
+
+--[[
+MusicAPI.PlayTrack(string track_name, ...)
 
 Given a track name, MusicAPI will look it up and play or crossfade the music ID.
 If the track name doesn't exist, or the track has no music ID associated, then
 nothing happens.
+
+Multiple tracks can be given. In this case, all further tracks are queued.
+
+Important edge case: If a "persistent" jingle is playing in the first queue slot,
+and track_name is already queued after it, this function will do nothing.
 ]]
-function MusicAPI.PlayTrack(track_name)
-	local track_music = MusicAPI.GetTrackMusic(track_name)
-	if track_music then
-		MusicAPI.Queue = {track_name}
-		MusicAPI.Crossfade(track_music)
+function MusicAPI.PlayTrack(...)
+	local queued_first = MusicAPI.Tracks[MusicAPI.Queue[1]]
+	GVM.Print("0 "..tostring(queued_first).." "..tostring(MusicAPI.Queue[1]))
+	if queued_first and queued_first.Persistent then
+		GVM.Print("1")
+		if track_names[1] == MusicAPI.Queue[2] then
+			GVM.Print("2")
+			-- The edge case
+			return
+		end	
+	end
+	
+	local track_names = {...}
+
+	MusicAPI.EmptyQueue(#track_names > 0)
+	for _, name in ipairs(track_names) do
+		MusicAPI.QueueTrack(name)
 	end
 end
 
 --[[
-MusicAPI.PlayTracks(table track_names)
+MusicAPI.ForcePlayTrack(string track_name)
 
-Given track names, MusicAPI will look it up and play or crossfade the first track,
-and then queue the remaining.
+Used internally.
 ]]
-function MusicAPI.PlayTracks(track_names)
-	MusicAPI.EmptyQueue(true)
-	for _, name in ipairs(track_names) do
-		MusicAPI.QueueTrack(name)
-	end
+function MusicAPI.ForcePlayTrack(track_name)
+	MusicAPI.Queue = {track_name}
+	MusicAPI.Crossfade()
 end
 
 --[[
@@ -470,6 +545,23 @@ function MusicAPI.EvaluateTrack(track_name)
 end
 
 --[[
+MusicAPI.IsTrackPlayable(string track_name)
+
+Returns true if the track has music associated with it. False otherwise.
+]]
+function MusicAPI.IsTrackPlayable(track_name)
+	local track = MusicAPI.Tracks[track_name]
+	if track then
+		if type(track.Music) == "number" then
+			return true
+		elseif type(track.Music) == "table" then
+			return #track.Music > 0
+		end
+	end
+	return false
+end
+
+--[[
 MusicAPI.QueueTrack(string track_name)
 
 MusicAPI queues this track to play once the current music is finished playing.
@@ -480,7 +572,8 @@ function MusicAPI.QueueTrack(track_name)
 	--if MusicAPI.TrackIsPlayable(track_name) then
 	
 	if #MusicAPI.Queue == 0 then
-		MusicAPI.PlayTrack(track_name)
+		MusicAPI.Queue = {track_name}
+		MusicAPI.Crossfade()
 	else
 		table.insert(MusicAPI.Queue, track_name)
 	end
@@ -496,12 +589,7 @@ Returns the previously playing track.
 function MusicAPI.PopTrackQueue()
 	local current = MusicAPI.Queue[1]
 	table.remove(MusicAPI.Queue, 1)
-	local queue_1 = MusicAPI.Queue[1]
-	if queue_1 then
-		MusicAPI.Crossfade(MusicAPI.EvaluateTrack(queue_1))
-	else
-		MusicAPI.Manager:Crossfade(Music.MUSIC_MUSICAPI_NOTHING)
-	end
+	MusicAPI.UseQueue()
 	return current
 end
 
@@ -524,6 +612,14 @@ MusicAPI.UseQueue()
 Make MusicAPI play the track at the front of the queue.
 Use after editing the queue directly.
 ]]
+function MusicAPI.UseQueue()
+	local queue_1 = MusicAPI.Queue[1]
+	if queue_1 then
+		MusicAPI.Crossfade(MusicAPI.EvaluateTrack(queue_1))
+	else
+		MusicAPI.Manager:Crossfade(Music.MUSIC_MUSICAPI_NOTHING)
+	end
+end
 
 --[[
 MusicAPI.Crossfade(Music music_id)
@@ -543,7 +639,7 @@ Resets all tracks back to their default values.
 ]]
 function MusicAPI.ResetTracks()
 	for track_name, track in pairs(tracks) do
-		MusicAPI.AddTrack(track_name, track.tags, track.music)
+		MusicAPI.AddTrack(track_name, track.tags, track.music, track.persistent)
 	end
 end
 

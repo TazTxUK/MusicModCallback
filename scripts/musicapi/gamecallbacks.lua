@@ -25,12 +25,21 @@ local PostNewRoom_JumpTable = {
 			MusicAPI.StartMinibossState()
 		end
 	end,
+	[RoomType.ROOM_CHALLENGE] = function()
+		if not cache.RoomDescriptor.ChallengeDone then
+			if cache.Stage ~= cache.AbsoluteStage then 
+				MusicAPI.StartAmbushState("ROOM_CHALLENGE_BOSS_ACTIVE", "JINGLE_CHALLENGE_BOSS_CLEAR", "ROOM_CHALLENGE_BOSS_CLEAR", true)
+			else
+				MusicAPI.StartAmbushState("ROOM_CHALLENGE_NORMAL_ACTIVE", "JINGLE_CHALLENGE_NORMAL_CLEAR", "ROOM_CHALLENGE_NORMAL_CLEAR", true)
+			end
+		end
+	end,
 }
 
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	local track_names = {MusicAPI.GetRoomEntryTrack()}
 	MusicAPI.SetRoomTrack(track_names[1])
-	MusicAPI.PlayTracks(track_names)
+	MusicAPI.PlayTrack(table.unpack(track_names))
 	
 	MusicAPI.ClearState()
 	
@@ -50,7 +59,7 @@ local PostRender_State_JumpTable = {
 		end
 		
 		if MusicAPI.State.Phase == 2 then
-			if cache.CountBosses == 0 and cache.Room:IsClear() then
+			if cache.CountBosses == 0 then
 				MusicAPI.PlayTracks{MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR"}
 				MusicAPI.ClearState()
 			end
@@ -60,6 +69,21 @@ local PostRender_State_JumpTable = {
 		if MusicAPI.State.Phase == 2 then
 			if cache.CountBosses == 0 and cache.Room:IsClear() then
 				MusicAPI.PlayTracks{"JINGLE_MINIBOSS_CLEAR", "ROOM_MINIBOSS_CLEAR"}
+				MusicAPI.ClearState()
+			end
+		end
+	end,
+	Ambush = function()
+		if MusicAPI.State.Phase == 1 then
+			if cache.Room:IsAmbushActive() then
+				MusicAPI.State.Phase = 2
+				MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+			end
+		end
+	
+		if MusicAPI.State.Phase == 2 then
+			if cache.Room:IsAmbushDone() then
+				MusicAPI.PlayTracks{MusicAPI.State.TrackEnd, MusicAPI.State.TrackClear}
 				MusicAPI.ClearState()
 			end
 		end

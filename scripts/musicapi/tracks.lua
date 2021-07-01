@@ -86,11 +86,7 @@ local track_table = {
 	},
 	["STAGE_MINESHAFT_AMBIENT"] = {
 		music = Music.MUSIC_MINESHAFT_AMBIENT,
-		tags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE2_2", "STAGE2"}
-	},
-	["STAGE_MINESHAFT_ESCAPE"] = {
-		music = Music.MUSIC_MINESHAFT_ESCAPE,
-		tags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE2_2", "STAGE2"}
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE2_2", "STAGE2", "MINESHAFT"}
 	},
 	
 	["STAGE_DEPTHS"] = {
@@ -441,6 +437,7 @@ local track_table = {
 	["JINGLE_SECRET_ROOM"] = {
 		music = Music.MUSIC_JINGLE_SECRETROOM_FIND,
 		tags = {"JINGLE"},
+		persistent = true,
 	},
 	["JINGLE_TREASURE_ROOM"] = {
 		music = {
@@ -450,10 +447,12 @@ local track_table = {
 			Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3
 		},
 		tags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
+		persistent = true,
 	},
 	["JINGLE_GAME_OVER"] = {
 		music = Music.MUSIC_JINGLE_GAME_OVER,
 		tags = {"JINGLE"},
+		persistent = true,
 	},
 	["JINGLE_DEVIL_ROOM"] = {
 		music = Music.MUSIC_JINGLE_DEVILROOM_FIND,
@@ -496,6 +495,10 @@ local track_table = {
 	["STATE_ASCENT"] = {
 		music = Music.MUSIC_REVERSE_GENESIS,
 		tags = {"REPENTANCE"},
+	},
+	["STATE_MINESHAFT_ESCAPE"] = {
+		music = Music.MUSIC_MINESHAFT_ESCAPE,
+		tags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE2_2", "STAGE2", "MINESHAFT"}
 	},
 	
 	["DIMENSION_DEATH_CERTIFICATE"] = {
