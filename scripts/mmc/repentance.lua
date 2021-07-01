@@ -355,6 +355,7 @@ function MMC.ResetSave()
 	modSaveData["inmineroom"] = false
 	modSaveData["inmineshaft"] = false
 	modSaveData["railcomplete"] = false
+	modSaveData["deathcertificateroom"] = false
 	modSaveData["darkhome"] = 0
 	
 	modSaveData["secretjingles"] = {}
@@ -388,9 +389,8 @@ local function getChapterMusic(floor_type, floor_variant, greed)
 end
 
 --check for death certificate
-local deathcertificateroom = false
 MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, function()
-	deathcertificateroom = true
+	modSaveData["deathcertificateroom"] = true
 end, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE)
 
 local function getStageMusic()
@@ -399,12 +399,12 @@ local function getStageMusic()
 	local stage = level:GetStage()
 	local stage_type = level:GetStageType()
 	--death certificate check
-	if deathcertificateroom then
+	if modSaveData["deathcertificateroom"] then
 		local backdrop = Game():GetRoom():GetBackdropType()
 		if (backdrop > 48 and backdrop < 55) or backdrop == 60 then
 			return Music.MUSIC_DARK_CLOSET
 		else
-			deathcertificateroom = false
+			modSaveData["deathcertificateroom"] = false
 		end
 	end
 	return getChapterMusic(stage, stage_type, game:IsGreedMode())
