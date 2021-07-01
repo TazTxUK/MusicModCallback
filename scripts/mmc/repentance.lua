@@ -1284,7 +1284,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 						satanfightstage = 2
 					end
 				elseif room:GetBossID() == 55 then
-					if satanfightstage == 0 and room:GetFrameCount() > 10 then
+					if satanfightstage == 0 and room:GetFrameCount() > 10 and not room:IsClear() then
 						local playertable = Isaac.FindByType(EntityType.ENTITY_PLAYER,0) --variant 0 is true players, i.e. not co-op babies
 						for i,entity in pairs(playertable) do
 							local tempPlayer = entity:ToPlayer()
