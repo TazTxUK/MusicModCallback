@@ -242,7 +242,7 @@ local previousgreedwave = 0
 local previousbosscount = 0
 local waitingforgamestjingle = true
 local satanfightstage = 0
-local doorprevstates = {}
+local doorprevvariants = {}
 local inbadstage = false
 local strangedoorstatebefore = DoorState.STATE_INIT
 local foundknifepiecebefore = false
@@ -355,6 +355,7 @@ function MMC.ResetSave()
 	modSaveData["inmineroom"] = false
 	modSaveData["inmineshaft"] = false
 	modSaveData["railcomplete"] = false
+	modSaveData["deathcertificateroom"] = false
 	modSaveData["darkhome"] = 0
 	
 	modSaveData["secretjingles"] = {}
@@ -388,9 +389,8 @@ local function getChapterMusic(floor_type, floor_variant, greed)
 end
 
 --check for death certificate
-local deathcertificateroom = false
 MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, function()
-	deathcertificateroom = true
+	modSaveData["deathcertificateroom"] = true
 end, CollectibleType.COLLECTIBLE_DEATH_CERTIFICATE)
 
 local function getStageMusic()
@@ -399,12 +399,12 @@ local function getStageMusic()
 	local stage = level:GetStage()
 	local stage_type = level:GetStageType()
 	--death certificate check
-	if deathcertificateroom then
+	if modSaveData["deathcertificateroom"] then
 		local backdrop = Game():GetRoom():GetBackdropType()
 		if (backdrop > 48 and backdrop < 55) or backdrop == 60 then
 			return Music.MUSIC_DARK_CLOSET
 		else
-			deathcertificateroom = false
+			modSaveData["deathcertificateroom"] = false
 		end
 	end
 	return getChapterMusic(stage, stage_type, game:IsGreedMode())
@@ -900,7 +900,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		for i=0,7 do
 			local door = room:GetDoor(i)
 			if door then
-				doorprevstates[i] = door.State
+				doorprevvariants[i] = door:GetVariant()
 				
 				if door.TargetRoomIndex == -100 then --the Mirror
 					modSaveData["inmirrorroom"] = true
@@ -1028,7 +1028,7 @@ function MusicModCallback:EndAngelFight()
 	local room = Game():GetRoom()
 	local roomtype = room:GetType()
 	
-	if roomtype == RoomType.ROOM_ANGEL or roomtype == RoomType.ROOM_SUPERSECRET then
+	if (roomtype == RoomType.ROOM_ANGEL or roomtype == RoomType.ROOM_SUPERSECRET) and Isaac.CountBosses() <= 1 then
 		musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
 	end
 end
@@ -1284,7 +1284,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 						satanfightstage = 2
 					end
 				elseif room:GetBossID() == 55 then
-					if satanfightstage == 0 and room:GetFrameCount() > 10 then
+					if satanfightstage == 0 and room:GetFrameCount() > 10 and not room:IsClear() then
 						local playertable = Isaac.FindByType(EntityType.ENTITY_PLAYER,0) --variant 0 is true players, i.e. not co-op babies
 						for i,entity in pairs(playertable) do
 							local tempPlayer = entity:ToPlayer()
@@ -1402,7 +1402,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		local door = room:GetDoor(i)
 		if door then
 			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET or door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
-				if door.State == DoorState.STATE_OPEN and (doorprevstates[i] == DoorState.STATE_CLOSED or door.TargetRoomType == RoomType.ROOM_ULTRASECRET) then
+				if door:GetVariant() == DoorVariant.DOOR_UNLOCKED and (doorprevvariants[i] == DoorVariant.DOOR_HIDDEN or door.TargetRoomType == RoomType.ROOM_ULTRASECRET) then
 					if Game():GetLevel():GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and not modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] then
 						modSaveData["secretjingles"][tostring(door.TargetRoomIndex)] = true
 						local icanseeforever = level:GetCanSeeEverything()
@@ -1424,7 +1424,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	for i=0,7 do
 		local door = room:GetDoor(i)
 		if door then
-			doorprevstates[i] = door.State
+			doorprevvariants[i] = door:GetVariant()
 		end
 	end
 	challengedonebefore = challengedonenow
