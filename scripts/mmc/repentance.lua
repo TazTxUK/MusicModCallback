@@ -1028,7 +1028,7 @@ function MusicModCallback:EndAngelFight()
 	local room = Game():GetRoom()
 	local roomtype = room:GetType()
 	
-	if roomtype == RoomType.ROOM_ANGEL or roomtype == RoomType.ROOM_SUPERSECRET then
+	if (roomtype == RoomType.ROOM_ANGEL or roomtype == RoomType.ROOM_SUPERSECRET) and Isaac.CountBosses() <= 1 then
 		musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
 	end
 end
