@@ -81,7 +81,7 @@ local mt_track = {
 	-- __gvmkcolor = KColor(51/255, 231/255, 1.0, 1.0),
 }
 
-function MusicAPI.AddTrack(name, tags, music, persistent)
+function MusicAPI.AddTrack(name, tags, music, persistence)
 	local track = {}
 	
 	--Set metatable
@@ -106,8 +106,8 @@ function MusicAPI.AddTrack(name, tags, music, persistent)
 	--Flags
 	track.Flags = Flagset()
 	
-	--Persistent
-	track.Persistent = persistent
+	--Persistence
+	track.Persistence = persistence
 	
 	--Assign Tags to Flags
 	for _, tag in ipairs(tags) do
@@ -139,7 +139,7 @@ Returns the track name of the given stage (eg. "STAGE_BASEMENT"), regardless of 
 Arguments omitted will use the current level as default.
 
 If glitched is true, then a different track is selected for the floor and is returned instead.
-(for the Delete This challenge). False to disable the effect.
+(for the Delete This challenge). False to force disable the effect, nil to use default value.
 ]]
 function MusicAPI.GetStageTrack(levelstage, stagetype, dimension, glitched)
 	if not levelstage then levelstage = cache.Stage end
@@ -185,6 +185,33 @@ function MusicAPI.GetMusicID(levelstage, stagetype, apitype)
 end
 
 --[[
+MusicAPI.GetMainMenuTrack(number|nil dlc)
+
+nil: Current
+1: Rebirth
+2: Afterbirth
+3: Afterbirth+
+4: Repentance
+
+Afterbirth+ returns the same as repentance
+]]
+do
+	local t = {
+		"MENU_MAIN_MENU_REBIRTH",
+		"MENU_MAIN_MENU_AFTERBIRTH",
+		"MENU_MAIN_MENU_AFTERBIRTH",
+		"MENU_MAIN_MENU_REPENTANCE",
+	}
+
+	function MusicAPI.GetMainMenuTrack(dlc)
+		if not dlc then
+			dlc = REPENTANCE and 4 or 3
+		end
+		return t[dlc]
+	end
+end
+
+--[[
 MusicAPI.GetTreasureRoomTrack()
 
 Get the tracks used as if the current room was a treasure room.
@@ -210,51 +237,91 @@ Get the tracks used as if the current room was a boss room.
 Used internally.
 ]]
 function MusicAPI.GetBossRoomEntryTrack()
-	if cache.Room:IsClear() then
-		if cache.STATE_MAUSOLEUM_HEART_KILLED then
-			if cache.Room:GetBossID() == 8 then
-				return "ROOM_BOSS_CLEAR_NULL"
-			else
-				return "ROOM_BOSS_CLEAR_TWISTED"
-			end
+	if cache.STATE_MAUSOLEUM_HEART_KILLED then
+		if cache.Room:GetBossID() == 8 then
+			return "ROOM_BOSS_CLEAR_NULL"
+		else
+			return "ROOM_BOSS_CLEAR_TWISTED"
 		end
-		return "ROOM_BOSS_CLEAR"
-	else
-		-- if cache.Room:GetBossID() == 0 then
-			-- return MusicAPI.GetGenericBossTrack()
-		-- else
-			-- return "JINGLE_BOSS"
-		-- end
 	end
+	return "ROOM_BOSS_CLEAR"
 end
 
 --[[
-MusicAPI.GetBossTrack(BossID|nil boss_id, LevelStage|nil level_stage, ...)
+MusicAPI.GetBossJingle(BossID|nil boss_id, ...)
+
+If no arguments are given:
+Get the boss jingle used as if the current room was a boss room.
+Used in a non-boss room will return a generic boss jingle.
+
+If given boss_id:
+Get the boss track used for the boss id given.
+
+Any arguments given after are passed to MusicAPI_GetGenericBossJingle if there
+is no specific boss theme for this boss.
+]]
+function MusicAPI.GetBossJingle(boss_id, ...)
+	boss_id = boss_id or cache.Room:GetBossID()
+	-- level_stage = level_stage or cache.Stage
+	-- local boss_idx = boss_id + level_stage << 16
+	-- return data.Bosses[boss_idx] or data.Bosses[boss_id] or MusicAPI.GetGenericBossTrack(...)
+	return data.BossJingles[boss_id] or MusicAPI.GetGenericBossJingle(...)
+end
+
+--[[
+MusicAPI.GetBossTrack(BossID|nil boss_id, ...)
 
 If no arguments are given:
 Get the boss track used as if the current room was a boss room.
 Used in a non-boss room will return a generic boss track.
 
-If given boss_id only:
-Get the boss track used for the boss id given, floor specific tracks are ignored.
-This isn't recommended, especially for bosses like Mom's Heart that can appear on
-two different floors.
-
-If given boss_id and level_stage:
-Get the boss track used for the boss id given on the level stage given.
+If given boss_id:
+Get the boss track used for the boss id given.
 
 Any arguments given after are passed to MusicAPI_GetGenericBossTrack if there
 is no specific boss theme for this boss.
 ]]
-function MusicAPI.GetBossTrack(boss_id, level_stage, ...)
+function MusicAPI.GetBossTrack(boss_id, ...)
 	boss_id = boss_id or cache.Room:GetBossID()
-	level_stage = level_stage or cache.Stage
-	local boss_idx = boss_id + level_stage << 16
-	return data.Bosses[boss_idx] or data.Bosses[boss_id] or MusicAPI.GetGenericBossTrack(...)
+	-- TAZ: This is for floor specific boss tracks, eg. BOSS_MOMS_HEART_MAUSOLEUM and BOSS_MOMS_HEART_WOMB. Feature is disabled for now.
+	-- level_stage = level_stage or cache.Stage
+	-- local boss_idx = boss_id + level_stage << 16
+	-- return data.Bosses[boss_idx] or data.Bosses[boss_id] or MusicAPI.GetGenericBossTrack(...)
+	return data.Bosses[boss_id] or MusicAPI.GetGenericBossTrack(...)
 end
 
 --[[
-MusicAPI.GetGenericBossTrack(StageType|nil stage_type, RoomDescriptor|nil room_descriptor)
+MusicAPI.GetBossClearJingle(BossID|nil boss_id, ...)
+
+If no arguments are given:
+Get the boss clear jingle used as if the current room was a boss room.
+Used in a non-boss room will return a generic boss jingle.
+
+If given boss_id:
+Get the boss track used for the boss id given.
+
+Any arguments given after are passed to MusicAPI_GetGenericBossClearJingle if there
+is no specific boss theme for this boss.
+]]
+function MusicAPI.GetBossClearJingle(boss_id, ...)
+	boss_id = boss_id or cache.Room:GetBossID()
+	-- level_stage = level_stage or cache.Stage
+	-- local boss_idx = boss_id + level_stage << 16
+	-- return data.Bosses[boss_idx] or data.Bosses[boss_id] or MusicAPI.GetGenericBossTrack(...)
+	return data.BossClearJingles[boss_id] or MusicAPI.GetGenericBossClearJingle(...)
+end
+
+--[[
+MusicAPI.GetGenericBossJingle()
+
+Gets the generic boss jingle.
+]]
+function MusicAPI.GetGenericBossJingle(stage_type, decoration_seed)
+	return "JINGLE_BOSS"
+end
+
+--[[
+MusicAPI.GetGenericBossTrack(StageType|nil stage_type, number|nil decoration_seed)
 
 Gets a generic boss theme.
 
@@ -264,8 +331,7 @@ Repentance theme. If no floor type is given, uses the current floor type.
 
 If -1 is given as the stage_type, any theme can be returned.
 
-room_descriptor is used to get the decoration seed, which determines random choices. Leave this
-as nil to use the current room descriptor.
+decoration_seed, which determines random choices. Leave this as nil to use the current room descriptor.
 ]]
 do
 	local generic_boss_tracks = {
@@ -282,15 +348,54 @@ do
 	function MusicAPI.GetGenericBossTrack(stage_type, room_descriptor)
 		stage_type = stage_type or cache.StageType
 		local stage_type_track = stagetype_boss_tracks[stage_type]
-		room_descriptor = room_descriptor or cache.RoomDescriptor
-		local deco_seed = room_descriptor
+		decoration_seed = decoration_seed or cache.RoomDescriptor.DecorationSeed
 		
 		if stage_type_track then
 			return stage_type_track
 		elseif stage_type == -1 then
-			return generic_boss_tracks[room_descriptor.DecorationSeed % 3 + 1]
+			return generic_boss_tracks[decoration_seed % 3 + 1]
 		else
-			return generic_boss_tracks[room_descriptor.DecorationSeed % 2 + 1]
+			return generic_boss_tracks[decoration_seed % 2 + 1]
+		end
+	end
+end
+
+--[[
+MusicAPI.GetGenericBossClearJingle(StageType|nil stage_type, number|nil decoration_seed)
+
+Gets a generic boss clear jingle.
+
+Returns a theme based on the given floor type (eg STAGETYPE_ORIGINAL could
+return Rebirth or Afterbirth themes, STAGETYPE_REPENTANCE only returns
+Repentance theme. If no floor type is given, uses the current floor type.
+
+If -1 is given as the stage_type, any theme can be returned.
+
+decoration_seed, which determines random choices. Leave this as nil to use the current room descriptor.
+]]
+do
+	local generic_boss_tracks = {
+		"JINGLE_BOSS_CLEAR_REBIRTH",
+		"JINGLE_BOSS_CLEAR_AFTERBIRTH",
+		"JINGLE_BOSS_CLEAR_REPENTANCE"
+	}
+	
+	local stagetype_boss_tracks = {
+		[StageType.STAGETYPE_REPENTANCE] = "JINGLE_BOSS_CLEAR_REPENTANCE",
+		[StageType.STAGETYPE_REPENTANCE_B] = "JINGLE_BOSS_CLEAR_REPENTANCE",
+	}
+	
+	function MusicAPI.GetGenericBossClearJingle(stage_type, room_descriptor)
+		stage_type = stage_type or cache.StageType
+		local stage_type_track = stagetype_boss_tracks[stage_type]
+		decoration_seed = decoration_seed or cache.RoomDescriptor.DecorationSeed
+		
+		if stage_type_track then
+			return stage_type_track
+		elseif stage_type == -1 then
+			return generic_boss_tracks[decoration_seed % 3 + 1]
+		else
+			return generic_boss_tracks[decoration_seed % 2 + 1]
 		end
 	end
 end
@@ -399,7 +504,7 @@ function MusicAPI.GetGameOverTrack()
 end
 
 --[[
-MusicAPI.StartBossState(boolean jingle)
+MusicAPI.StartBossState(number|boolean start_jingle)
 
 Sets MusicAPI to treat the current room like a boss fight.
 
@@ -408,7 +513,7 @@ to the boss defeat jingle.
 ]]
 function MusicAPI.StartBossState(start_jingle, theme, end_jingle)
 	if start_jingle == true then
-		start_jingle = "JINGLE_BOSS"
+		start_jingle = MusicAPI.GetBossJingle()
 	end
 
 	MusicAPI.State = {
@@ -416,7 +521,7 @@ function MusicAPI.StartBossState(start_jingle, theme, end_jingle)
 		Phase = start_jingle and 1 or 2,
 		TrackStart = start_jingle,
 		TrackMain = theme or MusicAPI.GetBossTrack(),
-		TrackEnd = end_jingle or "JINGLE_BOSS_CLEAR_REBIRTH",
+		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
 	}
 	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.TrackMain)
 end
@@ -511,24 +616,31 @@ nothing happens.
 
 Multiple tracks can be given. In this case, all further tracks are queued.
 
-Important edge case: If a "persistent" jingle is playing in the first queue slot,
-and track_name is already queued after it, this function will do nothing.
+Important edge cases:
+- If a persistence 1 jingle is playing in the first queue slot, and the track in
+  the first argument is already queued after it, this function will do nothing.
+- If a persistence 2 jingle is playing in the first queue slot, then the tracks will
+  be queued after it regardless.
 ]]
 function MusicAPI.PlayTrack(...)
 	local queued_first = MusicAPI.Tracks[MusicAPI.Queue[1]]
-	GVM.Print("0 "..tostring(queued_first).." "..tostring(MusicAPI.Queue[1]))
-	if queued_first and queued_first.Persistent then
-		GVM.Print("1")
-		if track_names[1] == MusicAPI.Queue[2] then
-			GVM.Print("2")
-			-- The edge case
-			return
-		end	
-	end
-	
 	local track_names = {...}
+	
+	if queued_first then
+		if queued_first.Persistence == 1 then
+			if track_names[1] == MusicAPI.Queue[2] then
+				-- No action
+				return
+			end	
+		elseif queued_first.Persistence == 2 then
+			-- Removes all but the persistence 2 track
+			MusicAPI.Queue = {MusicAPI.Queue[1]}
+		else
+			-- Empty queue
+			MusicAPI.EmptyQueue(#track_names > 0)
+		end
+	end
 
-	MusicAPI.EmptyQueue(#track_names > 0)
 	for _, name in ipairs(track_names) do
 		MusicAPI.QueueTrack(name)
 	end
@@ -640,7 +752,7 @@ Resets all tracks back to their default values.
 ]]
 function MusicAPI.ResetTracks()
 	for track_name, track in pairs(tracks) do
-		MusicAPI.AddTrack(track_name, track.tags, track.music, track.persistent)
+		MusicAPI.AddTrack(track_name, track.tags, track.music, track.persistence)
 	end
 end
 
@@ -656,6 +768,16 @@ function MusicAPI.ResetTrack(track_name)
 	end
 end
 
+--[[
+MusicAPI.PreGameStart()
+
+To be called before a run starts. Sets up some variables, plays main menu music.
+]]
+function MusicAPI.PreGameStart()
+	MusicAPI.BeforeStart = true -- set to false in gamecallbacks.lua on new room
+	-- MusicAPI.PlayTrack(MusicAPI.GetMainMenuTrack())
+	MusicAPI.Queue = {"API_GAME_START"}
+end
 
 --[[
 MusicAPI.GetTrackMusic(string track_name)
@@ -744,24 +866,32 @@ end
 -------------------------------- FUNCTIONS FOR ALTERING DATA --------------------------------
 
 --[[
-MusicAPI.SetBossTrack(BossID boss_id, string track_name, LevelStage|nil level_stage)
+MusicAPI.SetBossTrack(BossID boss_id, string track_name)
 
 Boss fights in rooms with this boss id will use the given track.
-
-OPTIONAL: Given level_stage, this track will only act on the boss if it is on that specific floor.
 ]]
-function MusicAPI.SetBossTrack(boss_id, track_name, level_stage)
-	if level_stage then
-		data.Bosses[boss_id + level_stage << 16] = track_name
-	else
+function MusicAPI.SetBossTrack(boss_id, track_name)
+	-- if level_stage then
+		-- data.Bosses[boss_id + level_stage << 16] = track_name
+	-- else
 		data.Bosses[boss_id] = track_name
-	end
+	-- end
 end
 
 -------------------------------- GAME CALLBACKS --------------------------------
 
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	local manager = MusicAPI.Manager
+	
+	if MusicAPI.Queue[1] == "API_GAME_START" then
+		local current_id = manager:GetCurrentMusicID()
+		if not (current_id == Music.MUSIC_JINGLE_GAME_START or current_id == Music.MUSIC_JINGLE_GAME_START_ALT) then
+			MusicAPI.PopTrackQueue()
+		else
+			manager:Queue(Music.MUSIC_MUSICAPI_QUEUE_POP)
+		end
+	end
+	
 	if manager:GetCurrentMusicID() == Music.MUSIC_MUSICAPI_QUEUE_POP then
 		MusicAPI.PopTrackQueue()
 	end

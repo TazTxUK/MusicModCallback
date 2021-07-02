@@ -103,7 +103,7 @@ data.Bosses = bosses
 bosses[6] = "BOSS_MOM"
 bosses[8] = "BOSS_MOMS_HEART_WOMB"
 bosses[25] = "BOSS_IT_LIVES"
-bosses[24] = "BOSS_SATAN"
+bosses[24] = "BOSS_SATAN_INACTIVE"
 bosses[39] = "BOSS_ISAAC"
 bosses[40] = "BOSS_BLUE_BABY"
 bosses[54] = "BOSS_LAMB"
@@ -113,8 +113,16 @@ bosses[63] = "BOSS_HUSH_FIRST"
 bosses[70] = "BOSS_DELIRIUM"
 bosses[88] = "BOSS_MOTHER"
 
---SPECIAL CASES: IF TRIGGERS DIFFER PER FLOOR
-bosses[8 + (LevelStage.STAGE3_2 << 16)] = "BOSS_MOMS_HEART_MAUSOLEUM"
+--SPECIAL CASES: IF TRIGGERS DIFFER PER FLOOR (FEATURE IS CURRENTLY DISABLED)
+-- bosses[8 + (LevelStage.STAGE3_2 << 16)] = "BOSS_MOMS_HEART_MAUSOLEUM"
+
+data.BossJingles = {}
+
+bosses[88] = "JINGLE_BOSS_MOTHER"
+
+data.BossClearJingles = {}
+
+bosses[88] = "JINGLE_BOSS_MOTHER_CLEAR"
 
 local rooms = {}
 data.Rooms = rooms

@@ -11,6 +11,7 @@ MMC = require("scripts.musicapi.legacy")
 require("scripts.musicapi.gamecallbacks")
 
 MusicAPI.ResetTracks()
+MusicAPI.PreGameStart()
 
 Isaac.ConsoleOutput("MusicAPI loaded successfully.\n")
 
@@ -37,7 +38,7 @@ mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	for i=1,4 do
 		local item = MusicAPI.Queue[i]
 		if item then
-			Isaac.RenderText(item, 50, y, 0.8, 0.8, 0.8, 1.0)
+			Isaac.RenderText(tostring(item), 50, y, 0.8, 0.8, 0.8, 1.0)
 		end
 		y = y + 12
 	end

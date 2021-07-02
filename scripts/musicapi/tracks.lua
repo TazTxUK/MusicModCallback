@@ -29,6 +29,10 @@ local track_table = {
 		music = Music.MUSIC_MUSICAPI_NOTHING,
 		tags = {"API"},
 	},
+	["API_GAME_START"] = {
+		tags = {"API"},
+		persistence = 2,
+	},
 
 	["STAGE_NULL"] = {
 		music = Music.MUSIC_MUSICAPI_NOTHING,
@@ -437,7 +441,7 @@ local track_table = {
 	["JINGLE_SECRET_ROOM"] = {
 		music = Music.MUSIC_JINGLE_SECRETROOM_FIND,
 		tags = {"JINGLE"},
-		persistent = true,
+		persistence = 1,
 	},
 	["JINGLE_TREASURE_ROOM"] = {
 		music = {
@@ -447,12 +451,12 @@ local track_table = {
 			Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3
 		},
 		tags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
-		persistent = true,
+		persistence = 1,
 	},
 	["JINGLE_GAME_OVER"] = {
 		music = Music.MUSIC_JINGLE_GAME_OVER,
 		tags = {"JINGLE"},
-		persistent = true,
+		persistence = 1,
 	},
 	["JINGLE_DEVIL_ROOM"] = {
 		music = Music.MUSIC_JINGLE_DEVILROOM_FIND,
@@ -462,15 +466,15 @@ local track_table = {
 		music = Music.MUSIC_JINGLE_BOSS_OVER, --check
 		tags = {"JINGLE", "JINGLE_BOSS_CLEAR"},
 	},
-	["JINGLE_MOTHER_OVER"] = {
+	["JINGLE_BOSS_MOTHER_CLEAR"] = {
 		music = Music.MUSIC_JINGLE_MOTHER_OVER,
 		tags = {"JINGLE", "REPENTANCE"},
 	},
-	["JINGLE_DOGMA_OVER"] = {
+	["JINGLE_BOSS_DOGMA_CLEAR"] = {
 		music = Music.MUSIC_JINGLE_DOGMA_OVER,
 		tags = {"JINGLE", "REPENTANCE"},
 	},
-	["JINGLE_BEAST_OVER"] = {
+	["JINGLE_BOSS_BEAST_CLEAR"] = {
 		music = Music.MUSIC_JINGLE_BEAST_OVER,
 		tags = {"JINGLE", "REPENTANCE"},
 	},
@@ -499,6 +503,19 @@ local track_table = {
 	["STATE_MINESHAFT_ESCAPE"] = {
 		music = Music.MUSIC_MINESHAFT_ESCAPE,
 		tags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE", "STAGETYPE_REPENTANCE_B", "STAGE2_2", "STAGE2", "MINESHAFT"}
+	},
+	
+	["MENU_MAIN_MENU_REBIRTH"] = {
+		music = Music.MUSIC_TITLE,
+		tags = {"MENU", "MENU_MAIN_MENU"},
+	},
+	["MENU_MAIN_MENU_AFTERBIRTH"] = {
+		music = Music.MUSIC_TITLE_AFTERBIRTH,
+		tags = {"MENU", "MENU_MAIN_MENU"},
+	},
+	["MENU_MAIN_MENU_REPENTANCE"] = {
+		music = Music.MUSIC_TITLE_REPENTANCE,
+		tags = {"MENU", "MENU_MAIN_MENU"},
 	},
 	
 	["DIMENSION_DEATH_CERTIFICATE"] = {

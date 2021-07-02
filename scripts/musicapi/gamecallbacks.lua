@@ -9,8 +9,6 @@ local mod = MusicAPI.Mod
 mod.SaveData = {}
 mod.Manager = MusicManager()
 
-MusicAPI.BeforeStart = true
-
 --Callbacks that control the music flow. Callbacks assisting the actual API
 --are still in api.lua.
 
@@ -105,10 +103,8 @@ end, EntityType.ENTITY_ISAAC)
 
 mod:AddCallback(ModCallbacks.MC_POST_GAME_END, function(self, game_over)
 	if game_over then
-		MusicAPI.PlayTracks{MusicAPI.GetGameOverTrack()}
+		MusicAPI.PlayTrack(MusicAPI.GetGameOverTrack())
 	end
 end)
 
-mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function(self, should_save)
-	MusicAPI.BeforeStart = true
-end)
+mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, MusicAPI.PreGameStart)
