@@ -527,6 +527,58 @@ function MusicAPI.StartBossState(start_jingle, theme, end_jingle)
 end
 
 --[[
+MusicAPI.StartSatanBossState(number|boolean start_jingle)
+]]
+function MusicAPI.StartSatanBossState(start_jingle, theme_inactive, theme_phase1, theme_phase2, end_jingle)
+	if start_jingle == true then
+		start_jingle = MusicAPI.GetBossJingle()
+	end
+
+	local ent = Isaac.FindByType(EntityType.ENTITY_SATAN)[1]
+	if ent then
+		ent = ent:ToNPC()
+		if not ent then
+			return MusicAPI.StartBossState(start_jingle, theme_phase1, end_jingle)
+		end
+	end
+
+	MusicAPI.State = {
+		Type = "SatanBoss",
+		Phase = start_jingle and 1 or 2,
+		TrackStart = start_jingle,
+		TrackInactive = theme_inactive or "BOSS_SATAN_INACTIVE",
+		TrackPhase1 = theme_phase1 or MusicAPI.GetGenericBossTrack(),
+		TrackPhase2 = theme_phase2 or "BOSS_SATAN",
+		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
+		Entity = ent,
+	}
+	
+	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.TrackInactive)
+end
+
+--[[
+MusicAPI.StartMegaSatanBossState(number|boolean start_jingle)
+]]
+function MusicAPI.StartMegaSatanBossState(start_jingle, theme_inactive, theme_main, end_jingle)
+	if start_jingle == true then
+		start_jingle = MusicAPI.GetBossJingle()
+	end
+	
+	theme_inactive = theme_inactive or "BOSS_SATAN_INACTIVE"
+
+	MusicAPI.State = {
+		Type = "MegaSatanBoss",
+		Phase = start_jingle and 1 or 2,
+		TrackStart = start_jingle,
+		TrackInactive = theme_inactive or theme_inactive,
+		TrackMain = theme_main or MusicAPI.GetBossTrack(),
+		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
+	}
+	
+	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.TrackInactive)
+end
+
+--[[
 MusicAPI.StartMinibossState()
 
 Sets MusicAPI to treat the current room like a miniboss fight.

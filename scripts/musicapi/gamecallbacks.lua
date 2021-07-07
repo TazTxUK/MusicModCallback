@@ -15,7 +15,14 @@ mod.Manager = MusicManager()
 local PostNewRoom_JumpTable = {
 	[RoomType.ROOM_BOSS] = function()
 		if not cache.Room:IsClear() then
-			MusicAPI.StartBossState(not MusicAPI.BeforeStart)
+			local jingle = not MusicAPI.BeforeStart
+			if cache.Room:GetBossID() == 24 then
+				MusicAPI.StartSatanBossState(jingle)
+			elseif cache.Room:GetBossID() == 55 then
+				MusicAPI.StartMegaSatanBossState(jingle)
+			else
+				MusicAPI.StartBossState(jingle)
+			end
 		end
 	end,
 	[RoomType.ROOM_MINIBOSS] = function()
@@ -57,6 +64,62 @@ local PostRender_State_JumpTable = {
 		end
 		
 		if MusicAPI.State.Phase == 2 then
+			if cache.CountBosses == 0 then
+				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR")
+				MusicAPI.ClearState()
+			end
+		end
+	end,
+	SatanBoss = function()
+		if MusicAPI.State.Phase == 1 then
+			if MusicAPI.State.Entity.StateFrame == 1 then
+				MusicAPI.State.Phase = 2
+				MusicAPI.PlayTrack(MusicAPI.State.TrackInactive)
+			end
+		end
+		
+		if MusicAPI.State.Phase == 2 then
+			if MusicAPI.State.Entity.StateFrame == 0 then
+				MusicAPI.State.Phase = 3
+				MusicAPI.PlayTrack(MusicAPI.State.TrackPhase1)
+			end
+		end
+		
+		if MusicAPI.State.Phase == 3 then
+			if MusicAPI.State.Entity.StateFrame == 25 then
+				MusicAPI.State.Phase = 4
+				MusicAPI.PlayTrack(MusicAPI.State.TrackPhase2)
+			end
+		end
+		
+		if MusicAPI.State.Phase > 1 then
+			if cache.CountBosses == 0 then
+				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR")
+				MusicAPI.ClearState()
+			end
+		end
+	end,
+	MegaSatanBoss = function()
+		if MusicAPI.State.Phase == 1 then
+			if cache.Room:GetFrameCount() > 0 then
+				MusicAPI.State.Phase = 2
+				MusicAPI.PlayTrack(MusicAPI.State.TrackInactive)
+			end
+		end
+		
+		if MusicAPI.State.Phase == 2 then
+			if cache.Room:GetFrameCount() > 0 then
+				for _, player in ipairs(Isaac.FindByType(1, 0)) do --TAZ: This is a bodge!
+					if player.Position.Y < 540 then
+						MusicAPI.State.Phase = 3
+						MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+						break
+					end
+				end
+			end
+		end
+		
+		if MusicAPI.State.Phase > 1 then
 			if cache.CountBosses == 0 then
 				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR")
 				MusicAPI.ClearState()

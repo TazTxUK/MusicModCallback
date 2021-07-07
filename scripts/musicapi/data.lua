@@ -101,13 +101,13 @@ local bosses = {}
 data.Bosses = bosses
 
 bosses[6] = "BOSS_MOM"
-bosses[8] = "BOSS_MOMS_HEART_WOMB"
+bosses[8] = "BOSS_MOMS_HEART"
 bosses[25] = "BOSS_IT_LIVES"
-bosses[24] = "BOSS_SATAN_INACTIVE"
+bosses[24] = "BOSS_SATAN"
 bosses[39] = "BOSS_ISAAC"
 bosses[40] = "BOSS_BLUE_BABY"
 bosses[54] = "BOSS_LAMB"
-bosses[55] = "BOSS_SATAN_INACTIVE"
+bosses[55] = "BOSS_SATAN"
 bosses[62] = "BOSS_ULTRA_GREED"
 bosses[63] = "BOSS_HUSH_FIRST"
 bosses[70] = "BOSS_DELIRIUM"

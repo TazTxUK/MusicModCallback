@@ -196,18 +196,18 @@ local track_table = {
 		music = Music.MUSIC_MOM_BOSS,
 		tags = {"BOSS", "STAGE3_2"}
 	},
-	["BOSS_MOMS_HEART_WOMB"] = {
+	["BOSS_MOMS_HEART"] = {
 		music = Music.MUSIC_MOMS_HEART_BOSS,
-		tags = {"BOSS", "STAGE4_2", "BOSS_MOMS_HEART"}
+		tags = {"BOSS", "STAGE4_2"}
 	},
 	["BOSS_IT_LIVES"] = {
 		music = Music.MUSIC_MOMS_HEART_BOSS,
 		tags = {"BOSS", "STAGE4_2"}
 	},
-	["BOSS_MOMS_HEART_MAUSOLEUM"] = {
-		music = Music.MUSIC_MOMS_HEART_BOSS,
-		tags = {"BOSS", "STAGE3_2", "REPENTANCE", "BOSS_MOMS_HEART"}
-	},
+	-- ["BOSS_MOMS_HEART_MAUSOLEUM"] = {
+		-- music = Music.MUSIC_MOMS_HEART_BOSS,
+		-- tags = {"BOSS", "STAGE3_2", "REPENTANCE", "BOSS_MOMS_HEART"}
+	-- },
 	["BOSS_ISAAC"] = {
 		music = Music.MUSIC_ISAAC_BOSS,
 		tags = {"BOSS", "STAGE5", "STAGETYPE_WOTL"}
