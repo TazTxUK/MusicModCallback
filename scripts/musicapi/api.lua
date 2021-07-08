@@ -155,19 +155,23 @@ function MusicAPI.GetStageTrack(levelstage, stagetype, dimension, glitched)
 	end
 	
 	local f
-	if dimension == 0 then
+	if cache.Game:IsGreedMode() then
+		f = data.FloorsGreed[levelstage]
+	elseif dimension == 0 then
 		f = data.Floors[levelstage]
 	elseif dimension == 1 then
 		f = data.FloorsAlternate[levelstage]
 	elseif dimension == 2 then
 		return "DIMENSION_DEATH_CERTIFICATE"
 	end
+	
 	if f then
 		local track_name = f[stagetype]
 		if track_name then
 			return track_name
 		end
 	end
+	
 	return "STAGE_NULL"
 end
 
@@ -464,7 +468,7 @@ do
 			return "STATE_MINESHAFT_ESCAPE"
 		end
 		
-		if cache.CurrentRoomIndex == -10 then
+		if cache.CurrentRoomIndex == -10 then -- Hardcoded beast
 			if cache.Stage == LevelStage.STAGE8 then
 				return "BOSS_BEAST"
 			end
