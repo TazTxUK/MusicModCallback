@@ -88,6 +88,27 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 			end
 		end
 	end,
+	DogmaBoss = function()
+		if MusicAPI.State.Phase == 1 then
+			if MusicAPI.State.Entity.State == 3 then
+				MusicAPI.State.Phase = 2
+			end
+		end
+		
+		if MusicAPI.State.Phase == 2 then
+			if cache.HUD:IsVisible() then
+				MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+				MusicAPI.State.Phase = 3
+			end
+		end
+		
+		if MusicAPI.State.Phase > 1 then
+			if MusicAPI.State.Entity.State == 18 and MusicAPI.State.Entity.StateFrame > 80 then
+				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd)
+				MusicAPI.ClearState()
+			end
+		end
+	end,
 	Miniboss = function()
 		if MusicAPI.State.Phase == 2 then
 			if cache.CountBosses == 0 and cache.Room:IsClear() then
@@ -143,6 +164,16 @@ mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	end
 end)
 
+mod:AddCallback(ModCallbacks.MC_NPC_UPDATE, function(self, ent) -- Dogma thinks
+	if ent.Variant == 0 then
+		if not MusicAPI.State then
+			if ent.State == NpcState.STATE_APPEAR_CUSTOM then
+				MusicAPI.StartDogmaBossState(true)
+			end
+		end
+	end
+end, EntityType.ENTITY_DOGMA)
+
 mod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent) -- Hush thinks
 	if ent.Variant == 2 then
 		MusicAPI.PlayTrack("BOSS_HUSH_FINAL")
@@ -156,3 +187,9 @@ mod:AddCallback(ModCallbacks.MC_POST_GAME_END, function(self, game_over)
 end)
 
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, MusicAPI.PreGameStart)
+
+mod:AddCallback(ModCallbacks.MC_POST_UPDATE, function(self)
+	if game_over then
+		MusicAPI.PlayTrack(MusicAPI.GetGameOverTrack())
+	end
+end)

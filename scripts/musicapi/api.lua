@@ -464,6 +464,12 @@ do
 			return "STATE_MINESHAFT_ESCAPE"
 		end
 		
+		if cache.CurrentRoomIndex == -10 then
+			if cache.Stage == LevelStage.STAGE8 then
+				return "BOSS_BEAST"
+			end
+		end
+		
 		if data.GridRooms[cache.CurrentRoomIndex] then -- Special grid rooms
 			return data.GridRooms[cache.CurrentRoomIndex]
 		end
@@ -576,6 +582,36 @@ function MusicAPI.StartMegaSatanBossState(start_jingle, theme_inactive, theme_ma
 	}
 	
 	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.TrackInactive)
+end
+
+--[[
+MusicAPI.StartDogmaBossState(number|boolean start_jingle)
+]]
+function MusicAPI.StartDogmaBossState(intro_theme, theme_main, end_jingle)
+	local ent = Isaac.FindByType(EntityType.ENTITY_DOGMA, 0)[1]
+	if ent then
+		ent = ent:ToNPC()
+	end
+	if not ent then return end
+	
+	if intro_theme == true then
+		intro_theme = "INTRO_DOGMA"
+	end
+
+	MusicAPI.State = {
+		Type = "DogmaBoss",
+		Phase = intro_theme and 1 or 2,
+		TrackIntro = intro_theme,
+		TrackMain = theme_main or "BOSS_DOGMA",
+		TrackEnd = end_jingle or "JINGLE_BOSS_DOGMA_CLEAR",
+		Entity = ent,
+	}
+	
+	if not intro_theme then
+		MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+	else
+		MusicAPI.PlayTrack(MusicAPI.State.TrackIntro)
+	end
 end
 
 --[[
@@ -751,7 +787,11 @@ do
 		MusicAPI.SetRoomTrack(track_names[1])
 		MusicAPI.PlayTrack(table.unpack(track_names))
 		
-		MusicAPI.ClearState()
+		if MusicAPI.ContinueState == true then
+			MusicAPI.ContinueState = nil
+		else
+			MusicAPI.ClearState()
+		end
 		
 		local j = ReloadRoomTrack_JumpTable[cache.RoomType]
 		if j then j() end
