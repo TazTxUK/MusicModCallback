@@ -12,49 +12,11 @@ mod.Manager = MusicManager()
 --Callbacks that control the music flow. Callbacks assisting the actual API
 --are still in api.lua.
 
-local PostNewRoom_JumpTable = {
-	[RoomType.ROOM_BOSS] = function()
-		if not cache.Room:IsClear() then
-			local jingle = not MusicAPI.BeforeStart
-			if cache.Room:GetBossID() == 24 then
-				MusicAPI.StartSatanBossState(jingle)
-			elseif cache.Room:GetBossID() == 55 then
-				MusicAPI.StartMegaSatanBossState(jingle)
-			else
-				MusicAPI.StartBossState(jingle)
-			end
-		end
-	end,
-	[RoomType.ROOM_MINIBOSS] = function()
-		if not cache.Room:IsClear() then
-			MusicAPI.StartMinibossState()
-		end
-	end,
-	[RoomType.ROOM_CHALLENGE] = function()
-		if not cache.RoomDescriptor.ChallengeDone then
-			if cache.Stage ~= cache.AbsoluteStage then 
-				MusicAPI.StartAmbushState("ROOM_CHALLENGE_BOSS_ACTIVE", "JINGLE_CHALLENGE_BOSS_CLEAR", "ROOM_CHALLENGE_BOSS_CLEAR", true)
-			else
-				MusicAPI.StartAmbushState("ROOM_CHALLENGE_NORMAL_ACTIVE", "JINGLE_CHALLENGE_NORMAL_CLEAR", "ROOM_CHALLENGE_NORMAL_CLEAR", true)
-			end
-		end
-	end,
-}
-
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
-	local track_names = {MusicAPI.GetRoomEntryTrack()}
-	MusicAPI.SetRoomTrack(track_names[1])
-	MusicAPI.PlayTrack(table.unpack(track_names))
-	
-	MusicAPI.ClearState()
-	
-	local j = PostNewRoom_JumpTable[cache.RoomType]
-	if j then j() end
-	
-	MusicAPI.BeforeStart = false
+	MusicAPI.ReloadRoomTrack()
 end)
 
-local PostRender_State_JumpTable = {
+local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of having loads of elseifs. In theory, runs faster.
 	Boss = function()
 		if MusicAPI.State.Phase == 1 then
 			if cache.Room:GetFrameCount() > 0 then
@@ -151,10 +113,33 @@ local PostRender_State_JumpTable = {
 	end,
 }
 
+local PostRender_MusicIDEqQueueID_JumpTable = {
+	[Music.MUSIC_JINGLE_NIGHTMARE] = function()
+		if cache.HUD:IsVisible() then
+			MusicAPI.ReloadRoomTrack()
+		end
+	end,
+	[Music.MUSIC_JINGLE_NIGHTMARE_ALT] = function()
+		if cache.HUD:IsVisible() then
+			MusicAPI.ReloadRoomTrack()
+		end
+	end,
+}
+
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	if MusicAPI.State then
 		local j = PostRender_State_JumpTable[MusicAPI.State.Type]
 		if j then j() end
+	end
+	
+	if MusicAPI.Manager:GetCurrentMusicID() == MusicAPI.Manager:GetQueuedMusicID() then
+		--This can happen in some situations where the game tries to control the music again
+		local f = PostRender_MusicIDEqQueueID_JumpTable[MusicAPI.Manager:GetCurrentMusicID()]
+		if f then
+			f()
+		else
+			MusicAPI.Manager:Queue(Music.MUSIC_MUSICAPI_QUEUE_POP)
+		end
 	end
 end)
 

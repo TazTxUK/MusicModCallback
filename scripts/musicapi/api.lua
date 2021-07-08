@@ -638,7 +638,7 @@ function MusicAPI.GetRoomTrack()
 end
 
 --[[
-MusicAPI.SetRoomTrack()
+MusicAPI.SetRoomTrack(track_name)
 
 Used internally only. Used to set MusicAPI.CurrentTrack.
 ]]
@@ -708,6 +708,55 @@ function MusicAPI.ForcePlayTrack(track_name)
 	if music then
 		MusicAPI.Queue = {track_name}
 		MusicAPI.Crossfade(music)
+	end
+end
+
+--[[
+MusicAPI.ReloadRoomTrack()
+
+Calculates the room track to be used and plays it.
+]]
+do
+	local ReloadRoomTrack_JumpTable = {
+		[RoomType.ROOM_BOSS] = function()
+			if not cache.Room:IsClear() then
+				local jingle = not MusicAPI.BeforeStart
+				if cache.Room:GetBossID() == 24 then
+					MusicAPI.StartSatanBossState(jingle)
+				elseif cache.Room:GetBossID() == 55 then
+					MusicAPI.StartMegaSatanBossState(jingle)
+				else
+					MusicAPI.StartBossState(jingle)
+				end
+			end
+		end,
+		[RoomType.ROOM_MINIBOSS] = function()
+			if not cache.Room:IsClear() then
+				MusicAPI.StartMinibossState()
+			end
+		end,
+		[RoomType.ROOM_CHALLENGE] = function()
+			if not cache.RoomDescriptor.ChallengeDone then
+				if cache.Stage ~= cache.AbsoluteStage then 
+					MusicAPI.StartAmbushState("ROOM_CHALLENGE_BOSS_ACTIVE", "JINGLE_CHALLENGE_BOSS_CLEAR", "ROOM_CHALLENGE_BOSS_CLEAR", true)
+				else
+					MusicAPI.StartAmbushState("ROOM_CHALLENGE_NORMAL_ACTIVE", "JINGLE_CHALLENGE_NORMAL_CLEAR", "ROOM_CHALLENGE_NORMAL_CLEAR", true)
+				end
+			end
+		end,
+	}
+
+	function MusicAPI.ReloadRoomTrack()
+		local track_names = {MusicAPI.GetRoomEntryTrack()}
+		MusicAPI.SetRoomTrack(track_names[1])
+		MusicAPI.PlayTrack(table.unpack(track_names))
+		
+		MusicAPI.ClearState()
+		
+		local j = ReloadRoomTrack_JumpTable[cache.RoomType]
+		if j then j() end
+		
+		MusicAPI.BeforeStart = false
 	end
 end
 

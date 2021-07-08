@@ -4,6 +4,7 @@ cache.Mod = RegisterMod("MusicAPI Cache", 1)
 local mod = cache.Mod
 
 cache.Game = Game()
+cache.HUD = cache.Game:GetHUD()
 
 local STAGE3_2 = LevelStage.STAGE3_2
 local STAGETYPE_REPENTANCE = StageType.STAGETYPE_REPENTANCE

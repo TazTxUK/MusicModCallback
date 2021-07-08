@@ -25,11 +25,16 @@ if the music will be replaced successfully or not, and it can be redirected.
 ]]
 
 local track_table = {
+	--Don't add callbacks to API tracks
 	["API_NOTHING"] = {
 		music = Music.MUSIC_MUSICAPI_NOTHING,
 		tags = {"API"},
 	},
 	["API_GAME_START"] = {
+		tags = {"API"},
+		persistence = 2,
+	},
+	["API_STAGE_TRANSITION"] = {
 		tags = {"API"},
 		persistence = 2,
 	},
