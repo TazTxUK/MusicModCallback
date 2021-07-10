@@ -11,7 +11,6 @@ mod.Manager = MusicManager()
 
 --[[
 TODO:
-- Rail buttons
 - GREED
 ]]
 
@@ -202,13 +201,34 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 					MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
 				end
 			elseif door.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
-				-- if door:GetVariant() ~= DoorVariant.DOOR_UNLOCKED then
+				if door:GetVariant() ~= DoorVariant.DOOR_UNLOCKED then
 					if cache.Stage == LevelStage.STAGE3_2 and cache.StageType < StageType.STAGETYPE_REPENTANCE then
 						MusicAPI.Doors.Strange = door
 					end
-				-- end
+				end
 			end
 		end
+	end
+	
+	MusicAPI.MinesButton = nil
+	if MusicAPI.Save.MinesButtons then
+		for i=1,cache.Room:GetGridSize() do
+			local gridentity = cache.Room:GetGridEntity(i)
+			if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
+				if gridentity.State ~= 3 then
+					MusicAPI.MinesButton = gridentity
+				end
+				break
+			end
+		end
+	end
+end)
+
+mod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, function()
+	if cache.Stage == LevelStage.STAGE2_2 and cache.StageType == StageType.STAGETYPE_REPENTANCE then
+		MusicAPI.Save.MinesButtons = {}
+	else
+		MusicAPI.Save.MinesButtons = nil
 	end
 end)
 
@@ -226,6 +246,16 @@ mod:AddCallback(ModCallbacks.MC_POST_UPDATE, function(self)
 		if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
 			MusicAPI.Doors.Strange = nil
 			MusicAPI.PlayJingle("JINGLE_STRANGE_DOOR")
+		end
+	end
+	
+	if MusicAPI.MinesButton then
+		if MusicAPI.MinesButton.State == 3 then
+			MusicAPI.MinesButton = nil
+			table.insert(MusicAPI.Save.MinesButtons, cache.RoomDescriptor.SafeGridIndex)
+			if #MusicAPI.Save.MinesButtons == 3 then
+				MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
+			end
 		end
 	end
 end)

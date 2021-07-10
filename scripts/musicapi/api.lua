@@ -195,6 +195,8 @@ nil: Current
 4: Repentance
 
 Afterbirth+ returns the same as repentance
+
+UNUSED: Didn't implement main menu tracks (I tried ma vereh best, honest)
 ]]
 do
 	local t = {
@@ -1049,6 +1051,7 @@ MusicAPI.LoadData()
 function MusicAPI.LoadData()
 	MusicAPI.Save = {}
 end
+MusicAPI.LoadData()
 
 -------------------------------- FUNCTIONS FOR ALTERING DATA --------------------------------
 
