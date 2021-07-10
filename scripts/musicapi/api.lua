@@ -50,15 +50,12 @@ function MusicAPI.TagIsUsed(tagname)
 	return MusicAPI.TagBit[tagname] and true
 end
 
-function MusicAPI.Flag(s, force)
+function MusicAPI.Flag(s)
 	local value = MusicAPI.TagBit[s]
 	if value then
 		return Flagset.Bit(value)
 	else
-		if force then
-			return Flagset.Bit(MusicAPI.AddTag(s))
-		end
-		return Flagset()
+		return Flagset.Bit(MusicAPI.AddTag(s))
 	end
 end
 
@@ -619,6 +616,23 @@ function MusicAPI.StartDogmaBossState(intro_theme, theme_main, end_jingle)
 end
 
 --[[
+MusicAPI.StartAngelBossState()
+
+Sets MusicAPI to treat the current room like an angel boss fight.
+
+Bosses have to be in the room, or else the state will jump straight
+to the boss defeat jingle.
+]]
+function MusicAPI.StartAngelBossState(theme, end_jingle)
+	MusicAPI.State = {
+		Type = "AngelBoss",
+		Phase = 1,
+		TrackMain = theme or MusicAPI.GetBossTrack(),
+		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
+	}
+end
+
+--[[
 MusicAPI.StartMinibossState()
 
 Sets MusicAPI to treat the current room like a miniboss fight.
@@ -719,11 +733,9 @@ function MusicAPI.PlayTrack(...)
 	local track_names = {...}
 	
 	if queued_first then
-		if queued_first.Persistence == 1 then
-			if track_names[1] == MusicAPI.Queue[2] then
-				-- No action
-				return
-			end	
+		if queued_first.Persistence == 1 and track_names[1] == MusicAPI.Queue[2] then
+			-- No action
+			return
 		elseif queued_first.Persistence == 2 then
 			-- Removes all but the persistence 2 track
 			MusicAPI.Queue = {MusicAPI.Queue[1]}
@@ -736,6 +748,22 @@ function MusicAPI.PlayTrack(...)
 	for _, name in ipairs(track_names) do
 		MusicAPI.QueueTrack(name)
 	end
+end
+
+--[[
+MusicAPI.PlayJingle(string track_name)
+
+Given a track name, MusicAPI will look it up and play or crossfade the music ID.
+If the track name doesn't exist, or the track has no music ID associated, then
+nothing happens.
+]]
+function MusicAPI.PlayJingle(track_name)
+	if MusicAPI.Queue[1] == track_name then
+		return
+	end
+
+	table.insert(MusicAPI.Queue, 1, track_name)
+	MusicAPI.UseQueue()
 end
 
 --[[
@@ -948,7 +976,7 @@ MusicAPI.TestQueueAllJingles()
 
 A test. Queues all tracks with the JINGLE flag.
 ]]
-local isJingle = Query() & MusicAPI.Flag("JINGLE", true)
+local isJingle = Query() & MusicAPI.Flag("JINGLE")
 function MusicAPI.TestQueueAllJingles()
 	MusicAPI.EmptyQueue(true)
 	for track_name, track in pairs(MusicAPI.Tracks) do
@@ -1006,6 +1034,20 @@ function MusicAPI.AddOnTrackCallback(func, req)
 	AddCallbackAssert1(func)
 	local callbacks = MusicAPI.Callbacks.OnTrack
 	callbacks[#callbacks + 1] = func
+end
+
+--[[
+MusicAPI.SaveData()
+]]
+function MusicAPI.SaveData()
+	
+end
+
+--[[
+MusicAPI.LoadData()
+]]
+function MusicAPI.LoadData()
+	MusicAPI.Save = {}
 end
 
 -------------------------------- FUNCTIONS FOR ALTERING DATA --------------------------------

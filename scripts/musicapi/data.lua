@@ -156,7 +156,7 @@ rooms[RoomType.ROOM_TELEPORTER] = "ROOM_TELEPORTER"
 rooms[RoomType.ROOM_TELEPORTER_EXIT] = "ROOM_TELEPORTER_EXIT"
 rooms[RoomType.ROOM_SECRET_EXIT or 27] = "ROOM_SECRET_EXIT"
 rooms[RoomType.ROOM_BLUE or 28] = "ROOM_BLUE"
-rooms[RoomType.ROOM_ULTRASECRET] = "ROOM_ULTRASECRET"
+rooms[RoomType.ROOM_ULTRASECRET] = "ROOM_ULTRA_SECRET"
 
 local gridrooms = {}
 data.GridRooms = gridrooms

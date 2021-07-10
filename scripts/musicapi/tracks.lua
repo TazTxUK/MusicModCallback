@@ -1,10 +1,14 @@
+local Query = require "scripts.musicapi.query"
+
 local enums = require "scripts.musicapi.enums"
 local Music = enums.Music
 
---[[
-Music tracks will replace (or supplement) normal music callbacks.
+-- local queryIsStage = Query() & MusicAPI.Flag("STAGE")
 
-With the current API, you can only check for a music music and replace it without any context.
+--[[
+Music tracks will replace (or supplement) normal music ids.
+
+With the current API, you can only check for a music id and replace it without any context.
 This should rectify that, making music replacements for specific scenarios easier, (Eg. Mega
 Satan, Hush stage 1) especially where music is reused. This also allows mods to simply disable
 music tags, for example JINGLE_BOSS, so that no boss jingles ever play, jumping straight into
@@ -17,11 +21,19 @@ If you have a surplus of music from another source to put into Isaac, you can us
 system to add separate tracks to Basement I and Basement II for example rather than add it to
 the entire Basement, if you want.
 Conversely, if you do not have enough music, you can make tracks simply not play or redirect to
-other tracks. For example: Have one music cover all boss music by looking for the "BOSS" tag.
+other tracks. For example: Have one track cover all boss music by looking for the "BOSS" tag.
 
 The "REPENTANCE" tag is added to all repentance tracks. If there was a music mod from Afterbirth+
 that you would like to convert into a repentance soundtrack, you can use this tag to determine
 if the music will be replaced successfully or not, and it can be redirected.
+
+Persistence:
+1 - If a persistence 1 jingle is playing with a track queued after it, and you attempt to play
+the track again, then the track will not override the jingle.
+2 - If a persistence 2 jingle is playing, any music to be played will be queued after it.
+
+For example if the game start theme is playing, and the player enters a planetarium, the planetarium music
+will be queued after the game start jingle is finished.
 ]]
 
 local track_table = {
@@ -273,7 +285,6 @@ local track_table = {
 		music = Music.MUSIC_BEAST_BOSS,
 		tags = {"BOSS", "STAGE8", "REPENTANCE"}
 	},
-	
 	["ROOM_SHOP"] = {
 		music = Music.MUSIC_SHOP_ROOM,
 		tags = {}
@@ -446,7 +457,7 @@ local track_table = {
 	["JINGLE_SECRET_ROOM"] = {
 		music = Music.MUSIC_JINGLE_SECRETROOM_FIND,
 		tags = {"JINGLE"},
-		persistence = 1,
+		persistence = 1
 	},
 	["JINGLE_TREASURE_ROOM"] = {
 		music = {

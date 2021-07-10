@@ -9,6 +9,12 @@ local mod = MusicAPI.Mod
 mod.SaveData = {}
 mod.Manager = MusicManager()
 
+--[[
+TODO:
+- Rail buttons
+- GREED
+]]
+
 --Callbacks that control the music flow. Callbacks assisting the actual API
 --are still in api.lua.
 
@@ -109,6 +115,20 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 			end
 		end
 	end,
+	AngelBoss = function()
+		if MusicAPI.State.Phase == 1 then
+			-- An angel statue has to be removed before the frame starts or
+			-- the state will be cleared
+			MusicAPI.ClearState()
+		end
+		
+		if MusicAPI.State.Phase == 2 then
+			if cache.CountBosses == 0 then
+				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR")
+				MusicAPI.ClearState()
+			end
+		end
+	end,
 	Miniboss = function()
 		if MusicAPI.State.Phase == 2 then
 			if cache.CountBosses == 0 and cache.Room:IsClear() then
@@ -164,6 +184,52 @@ mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	end
 end)
 
+mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
+	MusicAPI.Doors = {}
+	MusicAPI.Doors.Secret = {}
+	
+	for i=0,7 do
+		local door = cache.Room:GetDoor(i)
+		if door then
+			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
+				if door:GetVariant() == DoorVariant.DOOR_HIDDEN then
+					if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
+						table.insert(MusicAPI.Doors.Secret, door)
+					end
+				end
+			elseif door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
+				if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and cache.Level:GetCurrentRoomDesc().VisitedCount == 1 then
+					MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
+				end
+			elseif door.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
+				-- if door:GetVariant() ~= DoorVariant.DOOR_UNLOCKED then
+					if cache.Stage == LevelStage.STAGE3_2 and cache.StageType < StageType.STAGETYPE_REPENTANCE then
+						MusicAPI.Doors.Strange = door
+					end
+				-- end
+			end
+		end
+	end
+end)
+
+mod:AddCallback(ModCallbacks.MC_POST_UPDATE, function(self)
+	for i=#MusicAPI.Doors.Secret,1,-1 do
+		local door = MusicAPI.Doors.Secret[i]
+		if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
+			table.remove(MusicAPI.Doors.Secret, i)
+			MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
+		end
+	end
+	
+	if MusicAPI.Doors.Strange then
+		local door = MusicAPI.Doors.Strange
+		if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
+			MusicAPI.Doors.Strange = nil
+			MusicAPI.PlayJingle("JINGLE_STRANGE_DOOR")
+		end
+	end
+end)
+
 mod:AddCallback(ModCallbacks.MC_NPC_UPDATE, function(self, ent) -- Dogma thinks
 	if ent.Variant == 0 then
 		if not MusicAPI.State then
@@ -179,6 +245,24 @@ mod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent) -- Hush thin
 		MusicAPI.PlayTrack("BOSS_HUSH_FINAL")
 	end
 end, EntityType.ENTITY_ISAAC)
+
+mod:AddCallback(ModCallbacks.MC_POST_ENTITY_REMOVE, function(self, ent) -- Angel thinks
+	if ent.Variant == 9 then
+		if MusicAPI.State and MusicAPI.State.Type == "AngelBoss" and MusicAPI.State.Phase == 1 then
+			MusicAPI.State.Phase = 2
+			MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+		end
+	end
+end, EntityType.ENTITY_EFFECT)
+
+local function angelSpawnCallback(self, ent)
+	if not MusicAPI.State then
+		MusicAPI.StartAngelBossState()
+	end
+end
+
+mod:AddCallback(ModCallbacks.MC_POST_NPC_INIT, angelSpawnCallback, EntityType.ENTITY_URIEL)
+mod:AddCallback(ModCallbacks.MC_POST_NPC_INIT, angelSpawnCallback, EntityType.ENTITY_GABRIEL)
 
 mod:AddCallback(ModCallbacks.MC_POST_GAME_END, function(self, game_over)
 	if game_over then
