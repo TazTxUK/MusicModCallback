@@ -6,20 +6,10 @@ local json = require("json")
 MusicAPI.Mod = RegisterMod("MusicAPI", 1)
 local mod = MusicAPI.Mod
 
-mod.SaveData = {}
 mod.Manager = MusicManager()
-
---[[
-TODO:
-- GREED
-]]
 
 --Callbacks that control the music flow. Callbacks assisting the actual API
 --are still in api.lua.
-
-mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
-	MusicAPI.ReloadRoomTrack()
-end)
 
 local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of having loads of elseifs. In theory, runs faster.
 	Boss = function()
@@ -151,6 +141,80 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 			end
 		end
 	end,
+	Greed = function()
+		if MusicAPI.State.Phase == 0 then
+			if not cache.Room:IsClear() then
+				local waveNum = cache.Level.GreedModeWave
+				local maxNum = cache.Game:GetGreedWavesNum()
+				local bossNum = cache.Game:GetGreedBossWaveNum()
+				if waveNum == maxNum then
+					MusicAPI.PlayTrack(MusicAPI.State.Tracks[5])
+					MusicAPI.State.Phase = 3
+				elseif waveNum >= bossNum then
+					MusicAPI.PlayTrack(MusicAPI.State.Tracks[3])
+					MusicAPI.State.Phase = 2
+				else
+					if MusicAPI.State.Tracks[1] then
+						MusicAPI.PlayTrack(MusicAPI.State.Tracks[1])
+					end
+					MusicAPI.State.Phase = 1
+				end
+			end
+		end
+		
+		if MusicAPI.State.Phase == 1 then
+			if cache.Room:IsClear() then
+				MusicAPI.State.Phase = 0
+				if MusicAPI.State.Tracks[1] then
+					MusicAPI.PlayTrack(MusicAPI.State.Tracks[2], MusicAPI.State.Tracks[6])
+				end
+			end
+		end
+		
+		if MusicAPI.State.Phase == 2 then
+			if cache.Room:IsClear() then
+				MusicAPI.State.Phase = 0
+				MusicAPI.PlayTrack(MusicAPI.State.Tracks[4], MusicAPI.State.Tracks[6])
+			end
+		end
+		
+		if MusicAPI.State.Phase == 3 then
+			if cache.Room:IsClear() then
+				MusicAPI.State.Phase = 0
+				MusicAPI.PlayTrack(MusicAPI.State.Tracks[6])
+			end
+		end
+	end,
+	UltraGreedPreBoss = function()
+		if MusicAPI.State.Phase == 1 then
+			if cache.CountBosses > 0 then
+				MusicAPI.State.Phase = 2
+				MusicAPI.PlayTrack(MusicAPI.State.Tracks[1])
+			end
+		end
+		
+		if MusicAPI.State.Phase == 2 then
+			if cache.CountBosses == 0 then
+				MusicAPI.PlayTrack(MusicAPI.State.Tracks[2], "ROOM_BOSS_CLEAR")
+				MusicAPI.ClearState()
+			end
+		end
+	end,
+	UltraGreedBoss = function()
+		if MusicAPI.State.Phase == 1 then
+			if cache.Room:GetFrameCount() > 0 then
+				MusicAPI.State.Phase = 2
+				MusicAPI.PlayTrack(MusicAPI.State.Tracks[2])
+			end
+		end
+		
+		if MusicAPI.State.Phase == 2 then
+			if cache.Room:IsClear() then
+				MusicAPI.PlayTrack(MusicAPI.State.Tracks[3], "ROOM_BOSS_CLEAR")
+				MusicAPI.ClearState()
+			end
+		end
+	end,
 }
 
 local PostRender_MusicIDEqQueueID_JumpTable = {
@@ -184,6 +248,8 @@ mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 end)
 
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
+	MusicAPI.ReloadRoomTrack()
+
 	MusicAPI.Doors = {}
 	MusicAPI.Doors.Secret = {}
 	
@@ -211,7 +277,7 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	end
 	
 	MusicAPI.MinesButton = nil
-	if MusicAPI.Save.MinesButtons then
+	if MusicAPI.Save.Game.MinesButtons then
 		for i=1,cache.Room:GetGridSize() do
 			local gridentity = cache.Room:GetGridEntity(i)
 			if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
@@ -226,9 +292,9 @@ end)
 
 mod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, function()
 	if cache.Stage == LevelStage.STAGE2_2 and cache.StageType == StageType.STAGETYPE_REPENTANCE then
-		MusicAPI.Save.MinesButtons = {}
+		MusicAPI.Save.Game.MinesButtons = {}
 	else
-		MusicAPI.Save.MinesButtons = nil
+		MusicAPI.Save.Game.MinesButtons = nil
 	end
 end)
 
@@ -252,8 +318,8 @@ mod:AddCallback(ModCallbacks.MC_POST_UPDATE, function(self)
 	if MusicAPI.MinesButton then
 		if MusicAPI.MinesButton.State == 3 then
 			MusicAPI.MinesButton = nil
-			table.insert(MusicAPI.Save.MinesButtons, cache.RoomDescriptor.SafeGridIndex)
-			if #MusicAPI.Save.MinesButtons == 3 then
+			table.insert(MusicAPI.Save.Game.MinesButtons, cache.RoomDescriptor.SafeGridIndex)
+			if #MusicAPI.Save.Game.MinesButtons == 3 then
 				MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
 			end
 		end
@@ -301,9 +367,3 @@ mod:AddCallback(ModCallbacks.MC_POST_GAME_END, function(self, game_over)
 end)
 
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, MusicAPI.PreGameStart)
-
-mod:AddCallback(ModCallbacks.MC_POST_UPDATE, function(self)
-	if game_over then
-		MusicAPI.PlayTrack(MusicAPI.GetGameOverTrack())
-	end
-end)

@@ -245,6 +245,10 @@ local track_table = {
 		music = Music.MUSIC_SATAN_BOSS,
 		tags = {"BOSS", "STAGE6"}
 	},
+	["BOSS_GREEDMODE_EXTRA"] = {
+		music = Music.MUSIC_SATAN_BOSS,
+		tags = {"BOSS"}
+	},
 	["BOSS_LAMB"] = {
 		music = Music.MUSIC_DARKROOM_BOSS,
 		tags = {"BOSS", "STAGE6", "STAGETYPE_ORIGINAL"}
@@ -265,10 +269,10 @@ local track_table = {
 		music = Music.MUSIC_ULTRAGREED_BOSS,
 		tags = {"BOSS", "STAGE7_GREED", "BOSS_ULTRA_GREED"}
 	},
-	["BOSS_ULTRA_GREEDIER"] = {
-		music = Music.MUSIC_ULTRAGREED_BOSS,
-		tags = {"BOSS", "STAGE7_GREED", "BOSS_ULTRA_GREED"}
-	},
+	-- ["BOSS_ULTRA_GREEDIER"] = {
+		-- music = Music.MUSIC_ULTRAGREED_BOSS,
+		-- tags = {"BOSS", "STAGE7_GREED", "BOSS_ULTRA_GREED"}
+	-- },
 	["BOSS_DELIRIUM"] = {
 		music = Music.MUSIC_VOID_BOSS,
 		tags = {"BOSS", "STAGE7"}
@@ -537,6 +541,23 @@ local track_table = {
 	["DIMENSION_DEATH_CERTIFICATE"] = {
 		music = Music.MUSIC_DARK_CLOSET,
 		tags = {"REPENTANCE"},
+	},
+	
+	-- Extra greed themes for The Shop floor
+	["GREED_INACTIVE"] = {
+		tags = {"GREED"}
+	},
+	["GREED_ACTIVE"] = {
+		music = Music.MUSIC_CHALLENGE_FIGHT,
+		tags = {"GREED"}
+	},
+	["GREED_CLEAR"] = {
+		music = Music.MUSIC_BOSS_OVER,
+		tags = {"GREED", "BOSS_CLEAR"}
+	},
+	["JINGLE_GREED_CLEAR"] = {
+		music = Music.MUSIC_JINGLE_CHALLENGE_OUTRO,
+		tags = {"JINGLE"},
 	},
 }
 

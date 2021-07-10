@@ -1,4 +1,4 @@
-assert(_VERSION == "Lua 5.3", "The game is no longer using Lua 5.3! Alert the mod's developers!") --LuaJIT will remove integers. Watch for the update!
+assert(_VERSION == "Lua 5.3", "The game is no longer using Lua 5.3! Alert the mod's developers ASAP!") --LuaJIT will remove integers. Watch for the update!
 
 local MusicAPI = {}
 
@@ -513,6 +513,20 @@ function MusicAPI.GetGameOverTrack()
 end
 
 --[[
+MusicAPI.GetGreedFightTrack(LevelStage level_stage)
+]]
+function MusicAPI.GetGreedFightTrack(level_stage)
+	return data.GreedThemes[level_stage or cache.Stage]
+end
+
+--[[
+MusicAPI.GetGreedFightOutro(LevelStage level_stage)
+]]
+function MusicAPI.GetGreedFightOutro(level_stage)
+	return data.GreedThemeOutros[level_stage or cache.Stage]
+end
+
+--[[
 MusicAPI.StartBossState(number|boolean start_jingle)
 
 Sets MusicAPI to treat the current room like a boss fight.
@@ -533,6 +547,20 @@ function MusicAPI.StartBossState(start_jingle, theme, end_jingle)
 		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
 	}
 	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.TrackMain)
+end
+
+--[[
+MusicAPI.StartUltraGreedPreBossState(theme, end_jingle)
+]]
+function MusicAPI.StartUltraGreedPreBossState(theme, end_jingle)
+	MusicAPI.State = {
+		Type = "UltraGreedPreBoss",
+		Phase = 1,
+		Tracks = {
+			theme or MusicAPI.GetBossTrack(),
+			end_jingle or MusicAPI.GetBossClearJingle(),
+		}
+	}
 end
 
 --[[
@@ -635,6 +663,26 @@ function MusicAPI.StartAngelBossState(theme, end_jingle)
 end
 
 --[[
+MusicAPI.StartUltraGreedBossState(start_jingle, theme_main, end_jingle)
+]]
+function MusicAPI.StartUltraGreedBossState(start_jingle, theme_main, end_jingle)
+	if start_jingle == true then
+		start_jingle = MusicAPI.GetBossJingle()
+	end
+
+	MusicAPI.State = {
+		Type = "UltraGreedBoss",
+		Phase = start_jingle and 1 or 2,
+		Tracks = {
+			start_jingle,
+			theme_main or MusicAPI.GetBossTrack(),
+			end_jingle or MusicAPI.GetBossClearJingle(),
+		}
+	}
+	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.Tracks[2])
+end
+
+--[[
 MusicAPI.StartMinibossState()
 
 Sets MusicAPI to treat the current room like a miniboss fight.
@@ -669,6 +717,31 @@ function MusicAPI.StartAmbushState(ambush_theme, ambush_end_jingle, ambush_clear
 	if not waiting then
 		MusicAPI.PlayTrack(ambush_theme)
 	end
+end
+
+--[[
+MusicAPI.StartGreedState(enemy_theme, enemy_end_jingle, boss_theme, boss_end_jingle, final_boss_theme, calm)
+]]
+function MusicAPI.StartGreedState(enemy_theme, enemy_end_jingle, boss_theme, boss_end_jingle, final_boss_theme, calm)
+	MusicAPI.State = {
+		Type = "Greed",
+		Phase = 0,
+		Tracks = {
+			enemy_theme or MusicAPI.GetGreedFightTrack(),
+			enemy_end_jingle or MusicAPI.GetGreedFightOutro(),
+			boss_theme or MusicAPI.GetGenericBossTrack(),
+			boss_end_jingle or MusicAPI.GetGenericBossClearJingle(),
+			final_boss_theme or "BOSS_GREEDMODE_EXTRA",
+			calm or "ROOM_BOSS_CLEAR"
+		}
+		--[[
+			PHASES:
+			0 - INACTIVE
+			1 - ENEMIES
+			2 - BOSS 1-2
+			3 - BOSS 3
+		]]
+	}
 end
 
 --[[
@@ -789,12 +862,20 @@ Calculates the room track to be used and plays it.
 do
 	local ReloadRoomTrack_JumpTable = {
 		[RoomType.ROOM_BOSS] = function()
+			if cache.Game:IsGreedMode() then
+				if cache.Room:GetBossID() == 0 then
+					return MusicAPI.StartUltraGreedPreBossState()
+				end
+			end
+			
 			if not cache.Room:IsClear() then
 				local jingle = not MusicAPI.BeforeStart
 				if cache.Room:GetBossID() == 24 then
 					MusicAPI.StartSatanBossState(jingle)
 				elseif cache.Room:GetBossID() == 55 then
 					MusicAPI.StartMegaSatanBossState(jingle)
+				elseif cache.Room:GetBossID() == 62 then
+					MusicAPI.StartUltraGreedBossState(jingle)
 				else
 					MusicAPI.StartBossState(jingle)
 				end
@@ -829,6 +910,18 @@ do
 		
 		local j = ReloadRoomTrack_JumpTable[cache.RoomType]
 		if j then j() end
+		
+		if not MusicAPI.State then
+			if cache.Game:IsGreedMode() then
+				for i=1,cache.Room:GetGridSize() do
+					local gridentity = cache.Room:GetGridEntity(i)
+					if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 2 then
+						MusicAPI.StartGreedState()
+						break
+					end
+				end
+			end
+		end
 		
 		MusicAPI.BeforeStart = false
 	end
@@ -1038,20 +1131,45 @@ function MusicAPI.AddOnTrackCallback(func, req)
 	callbacks[#callbacks + 1] = func
 end
 
+MusicAPI.Save = {Game = {}}
+
 --[[
 MusicAPI.SaveData()
 ]]
 function MusicAPI.SaveData()
-	
+	local json = require "json"
+	local d = {
+		Mod = {
+			Version = 3,
+			VersionMinor = 0,
+			Name = "MusicAPI"
+		},
+		Data = MusicAPI.Save
+	}
+	d = json.encode(d)
+	Isaac.SaveModData(MusicAPI.ModMusic, d)
 end
 
 --[[
 MusicAPI.LoadData()
 ]]
 function MusicAPI.LoadData()
+	local json = require "json"
 	MusicAPI.Save = {}
+	
+	local s, err = pcall(function()
+		if Isaac.HasModData(MusicAPI.ModMusic) then
+			local d = Isaac.LoadModData(MusicAPI.ModMusic)
+			d = json.decode(d)
+			if d.Mod and d.Mod.Version == 3 and d.Mod.Name == "MusicAPI" then
+				MusicAPI.Save = d.Data
+			end
+		end
+	end)
+	-- if not s then GVM.Print(err) end
+	
+	MusicAPI.Save.Game = MusicAPI.Save.Game or {}
 end
-MusicAPI.LoadData()
 
 -------------------------------- FUNCTIONS FOR ALTERING DATA --------------------------------
 
@@ -1085,6 +1203,20 @@ mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	if manager:GetCurrentMusicID() == Music.MUSIC_MUSICAPI_QUEUE_POP then
 		MusicAPI.PopTrackQueue()
 	end
+end)
+
+mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function(self, is_continued)
+	MusicAPI.LoadData()
+	if not is_continued then
+		MusicAPI.Save.Game = {}
+	end
+end)
+
+mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function(self, should_save)
+	if not should_save then
+		MusicAPI.Save.Game = nil
+	end
+	MusicAPI.SaveData()
 end)
 
 -------------------------------- NON MUSIC RELATED FUNCTIONS BELOW --------------------------------

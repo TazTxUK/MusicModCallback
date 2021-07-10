@@ -97,6 +97,16 @@ floors_greed[LevelStage.STAGE6_GREED] = {
 
 floors_greed[LevelStage.STAGE7_GREED] = floors_greed[LevelStage.STAGE6_GREED]
 
+local greed_themes = {}
+data.GreedThemes = greed_themes
+
+greed_themes[LevelStage.STAGE6_GREED] = "GREED_ACTIVE"
+
+local greed_theme_outros = {}
+data.GreedThemeOutros = greed_theme_outros
+
+greed_theme_outros[LevelStage.STAGE6_GREED] = "JINGLE_GREED_CLEAR"
+
 local bosses = {}
 data.Bosses = bosses
 
