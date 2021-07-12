@@ -24,15 +24,18 @@ MusicAPI.Data = data
 
 MusicAPI.TagBit = {}
 MusicAPI.NextTagSlot = 0
+MusicAPI.NextTemporaryTrackSlot = 0
 
 MusicAPI.Tracks = {}
+MusicAPI.TemporaryTracks = {}
 MusicAPI.TrackCallbacks = {}
 
 MusicAPI.Manager = MusicManager()
 MusicAPI.Queue = {}
 
 MusicAPI.Callbacks = {
-	OnPlay = {}
+	OnPlay = {},
+	OnTrack = {},
 }
 
 MusicAPI.ModMusic = RegisterMod("MusicAPI Music", 1)
@@ -72,17 +75,8 @@ function MusicAPI.FixID(id)
 	return MusicTranslatedIDs[id] or id
 end
 
---Metatable for tracks (for Global Variable Menu mod)
-local mt_track = {
-	-- __gvmrepr = function(self) return string.format("MusicAPI Track (%i tags)", #self.tags) end,
-	-- __gvmkcolor = KColor(51/255, 231/255, 1.0, 1.0),
-}
-
 function MusicAPI.AddTrack(name, tags, music, persistence)
 	local track = {}
-	
-	--Set metatable
-	setmetatable(track, mt_track)
 	
 	--Some automatic steps:
 		--  Assign a capital case name for each track, in case it appears in a menu
@@ -107,12 +101,14 @@ function MusicAPI.AddTrack(name, tags, music, persistence)
 	track.Persistence = persistence
 	
 	--Assign Tags to Flags
-	for _, tag in ipairs(tags) do
-		track.Flags:SetBit(MusicAPI.AddTag(tag), true)
+	if tags then
+		for _, tag in ipairs(tags) do
+			track.Flags:SetBit(MusicAPI.AddTag(tag), true)
+		end
 	end
 	
 	--Assign own name as tag
-	track.Flags:SetBit(MusicAPI.AddTag(name), true)
+	-- track.Flags:SetBit(MusicAPI.AddTag(name), true)
 	
 	--Add music enum as a tag
 	if music then
@@ -527,6 +523,23 @@ function MusicAPI.GetGreedFightOutro(level_stage)
 end
 
 --[[
+MusicAPI.GetStateTrack(number n)
+
+Returns the track corresponding to the number given. If no n is given,
+will use the current phase. The phase doesn't always correspond with the
+track, so no arguments should only be used internally where appropriate.
+]]
+function MusicAPI.GetStateTrack(n)
+	if MusicAPI.State and MusicAPI.State.Tracks then
+		n = n or MusicAPI.State.Phase or 1
+		for i=n,MusicAPI.State.TrackCount or 16 do
+			local t = MusicAPI.State.Tracks[i]
+			if t then return t end
+		end
+	end
+end
+
+--[[
 MusicAPI.StartBossState(number|boolean start_jingle)
 
 Sets MusicAPI to treat the current room like a boss fight.
@@ -542,11 +555,16 @@ function MusicAPI.StartBossState(start_jingle, theme, end_jingle)
 	MusicAPI.State = {
 		Type = "Boss",
 		Phase = start_jingle and 1 or 2,
-		TrackStart = start_jingle,
-		TrackMain = theme or MusicAPI.GetBossTrack(),
-		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
+		Tracks = {
+			start_jingle,
+			theme or MusicAPI.GetBossTrack(),
+			end_jingle or MusicAPI.GetBossClearJingle(),
+		},
+		TrackCount = 3,
 	}
-	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.TrackMain)
+	
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
+	MusicAPI.PlayTrack(MusicAPI.GetStateTrack())
 end
 
 --[[
@@ -559,8 +577,11 @@ function MusicAPI.StartUltraGreedPreBossState(theme, end_jingle)
 		Tracks = {
 			theme or MusicAPI.GetBossTrack(),
 			end_jingle or MusicAPI.GetBossClearJingle(),
-		}
+		},
+		TrackCount = 2,
 	}
+	
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
 end
 
 --[[
@@ -582,15 +603,19 @@ function MusicAPI.StartSatanBossState(start_jingle, theme_inactive, theme_phase1
 	MusicAPI.State = {
 		Type = "SatanBoss",
 		Phase = start_jingle and 1 or 2,
-		TrackStart = start_jingle,
-		TrackInactive = theme_inactive or "BOSS_SATAN_INACTIVE",
-		TrackPhase1 = theme_phase1 or MusicAPI.GetGenericBossTrack(),
-		TrackPhase2 = theme_phase2 or "BOSS_SATAN",
-		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
+		Tracks = {
+			start_jingle,
+			theme_inactive or "BOSS_SATAN_INACTIVE",
+			theme_phase1 or MusicAPI.GetGenericBossTrack(),
+			theme_phase2 or "BOSS_SATAN",
+			end_jingle or MusicAPI.GetBossClearJingle(),
+		},
+		TrackCount = 5,
 		Entity = ent,
 	}
 	
-	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.TrackInactive)
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
+	MusicAPI.PlayTrack(MusicAPI.GetStateTrack())
 end
 
 --[[
@@ -847,10 +872,9 @@ MusicAPI.ForcePlayTrack(string track_name)
 Used internally.
 ]]
 function MusicAPI.ForcePlayTrack(track_name)
-	local music = MusicAPI.GetTrackMusic(track_name)
-	if music then
-		MusicAPI.Queue = {track_name}
-		MusicAPI.Crossfade(music)
+	if MusicAPI.IsTrackPlayable(track_name) then
+		MusicAPI.EmptyQueue(true)
+		MusicAPI.QueueTrack(track_name)
 	end
 end
 
@@ -899,7 +923,10 @@ do
 
 	function MusicAPI.ReloadRoomTrack()
 		local track_names = {MusicAPI.GetRoomEntryTrack()}
-		MusicAPI.SetRoomTrack(track_names[1])
+		
+		MusicAPI.RunOnTrackCallbacksOnList(track_names, true)
+		
+		-- MusicAPI.SetRoomTrack(track_names[1])
 		MusicAPI.PlayTrack(table.unpack(track_names))
 		
 		if MusicAPI.ContinueState == true then
@@ -953,10 +980,9 @@ nothing happens.
 ]]
 function MusicAPI.QueueTrack(track_name)
 	--if MusicAPI.TrackIsPlayable(track_name) then
-	if #MusicAPI.Queue == 0 then
-		MusicAPI.ForcePlayTrack(track_name)
-	else
-		table.insert(MusicAPI.Queue, track_name)
+	table.insert(MusicAPI.Queue, track_name)
+	if #MusicAPI.Queue == 1 then
+		MusicAPI.Crossfade(MusicAPI.GetTrackMusic(track_name))
 	end
 end
 
@@ -982,6 +1008,12 @@ will not be stopped despite the queue being empty.
 ]]
 function MusicAPI.EmptyQueue(dontStopPlaying)
 	MusicAPI.Queue = {}
+	
+	for track_id, _ in pairs(MusicAPI.TemporaryTracks) do
+		MusicAPI.Tracks[track_id] = nil
+		MusicAPI.TemporaryTracks[track_id] = nil
+	end
+	
 	if not dontStopPlaying then
 		MusicAPI.Manager:Crossfade(Music.MUSIC_MUSICAPI_NOTHING)
 	end
@@ -1020,7 +1052,7 @@ Resets all tracks back to their default values.
 ]]
 function MusicAPI.ResetTracks()
 	for track_name, track in pairs(tracks) do
-		MusicAPI.AddTrack(track_name, track.tags, track.music, track.persistence)
+		MusicAPI.AddTrack(track_name, track.Flags, track.Music, track.Persistence)
 	end
 end
 
@@ -1032,7 +1064,7 @@ Resets the named track back to its default values.
 function MusicAPI.ResetTrack(track_name)
 	local track = tracks[track_name]
 	if track then
-		MusicAPI.AddTrack(track_name, track.tags, track.music)
+		MusicAPI.AddTrack(track_name, track.tags, track.music, track.persistence)
 	end
 end
 
@@ -1081,6 +1113,20 @@ function MusicAPI.TestQueueAllJingles()
 	end
 end
 
+--[[
+MusicAPI.AddTemporaryTrack(Music track_id)
+
+Adds a temporary track for the id given. Returns the track name.
+This temporary track name becomes invalid once it gets removed from the queue.
+]]
+function MusicAPI.AddTemporaryTrack(track_id, persistence)
+	local name = "TEMP_" .. MusicAPI.NextTemporaryTrackSlot
+	MusicAPI.NextTemporaryTrackSlot = MusicAPI.NextTemporaryTrackSlot + 1
+	MusicAPI.AddTrack(name, nil, track_id, persistence)
+	MusicAPI.TemporaryTracks[name] = true
+	return name
+end
+
 local AddCallbackAssert1 = util.assertTypeFn({"function"}, 1)
 
 --[[
@@ -1120,15 +1166,92 @@ function MusicAPI.RunOnPlayCallbacks(track_name, track_id)
 end
 
 --[[
-MusicAPI.AddOnTrackCallback(func)
+MusicAPI.AddOnTrackCallback(function func)
 
-TAZ: Thinking of adding a priority number here, so mods can choose how important their callback is.
+Takes a function that takes a string (track name) and a MusicAPI.Flagset.
+The function given will be called every time a track is played.
+
+First return value:
+Return a string track name to use that track instead.
+Return a number to use that music id instead.
+Return false to prevent the track from playing. This can have varied effects
+depending on the situation: When used on a new room track, the previous room's
+track continues. When used on a state track (like a boss start jingle), it will
+often try to use the next available track straight away, which in this case would
+be the boss's main track.
+Returning nil has no effect.
+
+Second return value:
+Return a boolean value: true if other callbacks can run on your return value, false or nil if not.
 ]]
--- local AddCallbackAssert2 = util.assertTypeFn({"MusicAPI.Query", "MusicAPI.Flagset", "number", "nil"}, 3)
-function MusicAPI.AddOnTrackCallback(func, req)
+function MusicAPI.AddOnTrackCallback(func)
 	AddCallbackAssert1(func)
 	local callbacks = MusicAPI.Callbacks.OnTrack
 	callbacks[#callbacks + 1] = func
+end
+
+--[[
+MusicAPI.RunOnTrackCallbacks(string track, number musicID, MusicAPI.Flagset flags)
+MusicAPI.RunOnTrackCallbacks(table<string> tracks, boolean remove_nils)
+
+Runs all OnTrack callbacks.
+
+If called with a table, will run callbacks on each track in place and return it.
+
+Returns new track, music id
+]]
+function MusicAPI.RunOnTrackCallbacks(track_name, track_flags)
+	for _, callback in ipairs(MusicAPI.Callbacks.OnTrack) do
+		local r1, r2 = callback(track_name, track_flags)
+		
+		if r1 then
+			if type(r1) == "string" then
+				track_name = r1
+				track_flags = MusicAPI.Tracks[track_name] and MusicAPI.Tracks[track_name].Flags or Flagset()
+			elseif type(r1) == "number" then
+				return r1
+			elseif r1 == false then
+				return r1
+			end
+		end
+		
+		if r1 ~= nil and not r2 then
+			break
+		end
+	end
+	
+	return track_name
+end
+
+--[[
+MusicAPI.RunOnTrackCallbacksOnList(table<string> tracks, boolean remove_nils)
+
+Run callbacks on each track in place and return it.
+]]
+function MusicAPI.RunOnTrackCallbacksOnList(track_names, remove_nils)
+	local size = #track_names
+	for track_idx, track_str in ipairs(track_names) do
+		local flags
+		if MusicAPI.Tracks[track_str] then
+			flags = MusicAPI.Tracks[track_str].Flags
+		end
+		local ret = MusicAPI.RunOnTrackCallbacks(track_str, flags)
+		if type(ret) == "string" then
+			track_names[track_idx] = ret
+		elseif type(ret) == "number" then
+			track_names[track_idx] = MusicAPI.AddTemporaryTrack(ret)
+		elseif ret == false then
+			track_names[track_idx] = nil
+		end
+	end
+	
+	if remove_nils then
+		for i=size,1,-1 do
+			if track_names[i] == nil then table.remove(track_names, i) end
+		end
+	end
+	
+	return track_names
 end
 
 MusicAPI.Save = {Game = {}}

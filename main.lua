@@ -56,3 +56,7 @@ end)
 MusicAPI.AddOnPlayCallback(function(trigger_name, track_id)
 	Isaac.ConsoleOutput("Now Playing: "..trigger_name.." ("..track_id..")\n")
 end)
+
+MusicAPI.AddOnTrackCallback(function(track_name, track_flags)
+	return "STAGE_MAUSOLEUM"
+end)
