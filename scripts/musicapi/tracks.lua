@@ -489,16 +489,8 @@ local track_table = {
 		Music = Music.MUSIC_JINGLE_BOSS_OVER, --check
 		Flags = {"JINGLE", "JINGLE_BOSS_CLEAR"},
 	},
-	["JINGLE_BOSS_MOTHER_CLEAR"] = {
-		Music = Music.MUSIC_JINGLE_MOTHER_OVER,
-		Flags = {"JINGLE", "REPENTANCE"},
-	},
 	["JINGLE_BOSS_DOGMA_CLEAR"] = {
 		Music = Music.MUSIC_JINGLE_DOGMA_OVER,
-		Flags = {"JINGLE", "REPENTANCE"},
-	},
-	["JINGLE_BOSS_BEAST_CLEAR"] = {
-		Music = Music.MUSIC_JINGLE_BEAST_OVER,
 		Flags = {"JINGLE", "REPENTANCE"},
 	},
 	["JINGLE_STRANGE_DOOR"] = {

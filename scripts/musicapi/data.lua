@@ -126,13 +126,11 @@ bosses[88] = "BOSS_MOTHER"
 --SPECIAL CASES: IF TRIGGERS DIFFER PER FLOOR (FEATURE IS CURRENTLY DISABLED)
 -- bosses[8 + (LevelStage.STAGE3_2 << 16)] = "BOSS_MOMS_HEART_MAUSOLEUM"
 
-data.BossJingles = {}
+local bossJingles = {}
+data.BossJingles = bossJingles
 
-bosses[88] = "JINGLE_BOSS_MOTHER"
-
-data.BossClearJingles = {}
-
-bosses[88] = "JINGLE_BOSS_MOTHER_CLEAR"
+local bossClearJingles = {}
+data.BossClearJingles = bossClearJingles
 
 local rooms = {}
 data.Rooms = rooms

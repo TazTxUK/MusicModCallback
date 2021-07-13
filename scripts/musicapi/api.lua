@@ -218,15 +218,20 @@ This is used internally, but can also be used by modders if they want to
 recreate the music queue of a treasure room without actually being in one.
 ]]
 function MusicAPI.GetTreasureRoomTrack()
+	local treasure
+	if MusicAPI.IsTrackPlayable("ROOM_TREASURE") then
+		treasure = "ROOM_TREASURE"
+	else
+		treasure = MusicAPI.GetStageTrack()
+	end
+
 	if (
 		cache.Room:IsFirstVisit() and
-		(cache.Game:IsGreedMode() or cache.Level:GetStage() ~= LevelStage.STAGE4_3) and
-		cache.Dimension == 0 and
-		not cache.STATE_BACKWARDS_PATH
+		(cache.Game:IsGreedMode() or cache.Level:GetStage() ~= LevelStage.STAGE4_3)
 	) then
-		return "JINGLE_TREASURE_ROOM", MusicAPI.GetStageTrack()
+		return "JINGLE_TREASURE_ROOM", treasure
 	end
-	return MusicAPI.GetStageTrack()
+	return treasure
 end
 
 --[[
@@ -1012,7 +1017,7 @@ function MusicAPI.QueueTrack(track_name)
 	--if MusicAPI.TrackIsPlayable(track_name) then
 	table.insert(MusicAPI.Queue, track_name)
 	if #MusicAPI.Queue == 1 then
-		MusicAPI.Crossfade(MusicAPI.GetTrackMusic(track_name))
+		MusicAPI.UseQueue()
 	end
 end
 
@@ -1058,7 +1063,11 @@ Use after editing the queue directly.
 function MusicAPI.UseQueue()
 	local queue_1 = MusicAPI.Queue[1]
 	if queue_1 then
-		MusicAPI.Crossfade(MusicAPI.GetTrackMusic(queue_1))
+		local id = MusicAPI.GetTrackMusic(queue_1)
+		id = MusicAPI.RunOnMusicCallbacks(id)
+		if id then
+			MusicAPI.Crossfade(id)
+		end
 	else
 		MusicAPI.Manager:Crossfade(Music.MUSIC_MUSICAPI_NOTHING)
 	end
@@ -1199,7 +1208,7 @@ end
 MusicAPI.AddOnTrackCallback(function func)
 
 Takes a function that takes a string (track name) and a MusicAPI.Flagset.
-The function given will be called every time a track is played.
+The function given will be called every time a track is requested.
 
 First return value:
 Return a string track name to use that track instead.
@@ -1226,9 +1235,7 @@ MusicAPI.RunOnTrackCallbacks(table<string> tracks, boolean remove_nils)
 
 Runs all OnTrack callbacks.
 
-If called with a table, will run callbacks on each track in place and return it.
-
-Returns new track, music id
+Returns new track
 ]]
 function MusicAPI.RunOnTrackCallbacks(track_name, track_flags, state)
 	for _, callback in ipairs(MusicAPI.Callbacks.OnTrack) do
@@ -1285,6 +1292,82 @@ function MusicAPI.RunOnTrackCallbacksOnList(track_names, remove_nils)
 	end
 	
 	return track_names
+end
+
+MusicAPI.Callbacks.OnMusic = {Req = {}}
+
+--[[
+MusicAPI.AddOnMusicCallback(function func)
+
+Takes a function that takes a music ID.
+The function given will be called every time a music ID is played.
+]]
+function MusicAPI.AddOnMusicCallback(func, req)
+	AddCallbackAssert1(func)
+	local callbacks = MusicAPI.Callbacks.OnMusic
+	if req then
+		callbacks.Req[req] = callbacks.Req[req] or {}
+		callbacks = callbacks.Req[req]
+	end
+	callbacks[#callbacks + 1] = func
+end
+
+MusicAPI.Save = {Game = {}}
+
+MusicAPI.Callbacks.Legacy = {Req = {}}
+
+--[[
+MusicAPI.AddLegacyCallback(table, function, number|nil)
+
+Deprecated. Don't use.
+]]
+function MusicAPI.AddLegacyCallback(id, func, req)
+	AddCallbackAssert1(func)
+	local callbacks = MusicAPI.Callbacks.Legacy
+	if req then
+		callbacks.Req[req] = callbacks.Req[req] or {}
+		callbacks = callbacks.Req[req]
+	end
+	callbacks[#callbacks + 1] = func
+end
+
+--[[
+MusicAPI.RunOnMusicCallbacks(Music music)
+
+Runs all OnMusic and Legacy callbacks.
+
+Returns music id
+]]
+function MusicAPI.RunOnMusicCallbacks(music_id)
+	if MusicAPI.Callbacks.OnMusic.Req[music_id] then
+		for _, callback in ipairs(MusicAPI.Callbacks.OnMusic.Req[music_id]) do
+			local res = tonumber(callback(music_id))
+			if res == -1 then return end
+			if res then return res end
+		end
+	end
+	
+	if MusicAPI.Callbacks.Legacy.Req[music_id] then
+		for _, callback in ipairs(MusicAPI.Callbacks.Legacy.Req[music_id]) do
+			local res = tonumber(callback(music_id))
+			if res == 0 then return end
+			if res then return res end
+		end
+	end
+	
+	for _, callback in ipairs(MusicAPI.Callbacks.OnMusic) do
+		local res = tonumber(callback(music_id))
+		if res == -1 then return end
+		if res then return res end
+	end
+	
+	for _, callback in ipairs(MusicAPI.Callbacks.Legacy) do
+		local res = tonumber(callback(music_id))
+		if res == 0 then return end
+		if res then return res end
+	end
+	
+	return music_id
 end
 
 MusicAPI.Save = {Game = {}}
