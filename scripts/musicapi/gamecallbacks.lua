@@ -16,13 +16,13 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		if MusicAPI.State.Phase == 1 then
 			if cache.Room:GetFrameCount() > 0 then
 				MusicAPI.State.Phase = 2
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[2])
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2))
 			end
 		end
 		
 		if MusicAPI.State.Phase == 2 then
 			if cache.CountBosses == 0 then
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[3], "ROOM_BOSS_CLEAR")
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(3), "ROOM_BOSS_CLEAR")
 				MusicAPI.ClearState()
 			end
 		end
@@ -31,27 +31,27 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		if MusicAPI.State.Phase == 1 then
 			if MusicAPI.State.Entity.StateFrame == 1 then
 				MusicAPI.State.Phase = 2
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[2])
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2))
 			end
 		end
 		
 		if MusicAPI.State.Phase == 2 then
 			if MusicAPI.State.Entity.StateFrame == 0 then
 				MusicAPI.State.Phase = 3
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[3])
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(3))
 			end
 		end
 		
 		if MusicAPI.State.Phase == 3 then
 			if MusicAPI.State.Entity.StateFrame == 25 then
 				MusicAPI.State.Phase = 4
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[4])
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(4))
 			end
 		end
 		
 		if MusicAPI.State.Phase > 1 then
 			if cache.CountBosses == 0 then
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[5], "ROOM_BOSS_CLEAR")
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(5), "ROOM_BOSS_CLEAR")
 				MusicAPI.ClearState()
 			end
 		end
@@ -60,7 +60,7 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		if MusicAPI.State.Phase == 1 then
 			if cache.Room:GetFrameCount() > 0 then
 				MusicAPI.State.Phase = 2
-				MusicAPI.PlayTrack(MusicAPI.State.TrackInactive)
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2))
 			end
 		end
 		
@@ -69,7 +69,7 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 				for _, player in ipairs(Isaac.FindByType(1, 0)) do --TAZ: This is a bodge!
 					if player.Position.Y < 540 then
 						MusicAPI.State.Phase = 3
-						MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+						MusicAPI.PlayTrack(MusicAPI.GetStateTrack(3))
 						break
 					end
 				end
@@ -78,7 +78,7 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		
 		if MusicAPI.State.Phase > 1 then
 			if cache.CountBosses == 0 then
-				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR")
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(4), "ROOM_BOSS_CLEAR")
 				MusicAPI.ClearState()
 			end
 		end
@@ -92,14 +92,14 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		
 		if MusicAPI.State.Phase == 2 then
 			if cache.HUD:IsVisible() then
-				MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2))
 				MusicAPI.State.Phase = 3
 			end
 		end
 		
 		if MusicAPI.State.Phase > 1 then
 			if MusicAPI.State.Entity.State == 18 and MusicAPI.State.Entity.StateFrame > 80 then
-				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd)
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(3))
 				MusicAPI.ClearState()
 			end
 		end
@@ -113,30 +113,28 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		
 		if MusicAPI.State.Phase == 2 then
 			if cache.CountBosses == 0 then
-				MusicAPI.PlayTrack(MusicAPI.State.TrackEnd, "ROOM_BOSS_CLEAR")
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2), "ROOM_BOSS_CLEAR")
 				MusicAPI.ClearState()
 			end
 		end
 	end,
 	Miniboss = function()
-		if MusicAPI.State.Phase == 2 then
-			if cache.CountBosses == 0 and cache.Room:IsClear() then
-				MusicAPI.PlayTrack("JINGLE_MINIBOSS_CLEAR", "ROOM_MINIBOSS_CLEAR")
-				MusicAPI.ClearState()
-			end
+		if cache.CountBosses == 0 and cache.Room:IsClear() then
+			MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2), "ROOM_MINIBOSS_CLEAR")
+			MusicAPI.ClearState()
 		end
 	end,
 	Ambush = function()
 		if MusicAPI.State.Phase == 1 then
 			if cache.Room:IsAmbushActive() then
 				MusicAPI.State.Phase = 2
-				MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(1))
 			end
 		end
 	
 		if MusicAPI.State.Phase == 2 then
 			if cache.Room:IsAmbushDone() then
-				MusicAPI.PlayTracks{MusicAPI.State.TrackEnd, MusicAPI.State.TrackClear}
+				MusicAPI.PlayTracks{MusicAPI.GetStateTrack(2), MusicAPI.GetStateTrack(3)}
 				MusicAPI.ClearState()
 			end
 		end
@@ -148,14 +146,14 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 				local maxNum = cache.Game:GetGreedWavesNum()
 				local bossNum = cache.Game:GetGreedBossWaveNum()
 				if waveNum == maxNum then
-					MusicAPI.PlayTrack(MusicAPI.State.Tracks[5])
+					MusicAPI.PlayTrack(MusicAPI.GetStateTrack(5))
 					MusicAPI.State.Phase = 3
 				elseif waveNum >= bossNum then
-					MusicAPI.PlayTrack(MusicAPI.State.Tracks[3])
+					MusicAPI.PlayTrack(MusicAPI.GetStateTrack(3))
 					MusicAPI.State.Phase = 2
 				else
-					if MusicAPI.State.Tracks[1] then
-						MusicAPI.PlayTrack(MusicAPI.State.Tracks[1])
+					if MusicAPI.GetStateTrack(1) then
+						MusicAPI.PlayTrack(MusicAPI.GetStateTrack(1))
 					end
 					MusicAPI.State.Phase = 1
 				end
@@ -165,8 +163,8 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		if MusicAPI.State.Phase == 1 then
 			if cache.Room:IsClear() then
 				MusicAPI.State.Phase = 0
-				if MusicAPI.State.Tracks[1] then
-					MusicAPI.PlayTrack(MusicAPI.State.Tracks[2], MusicAPI.State.Tracks[6])
+				if MusicAPI.GetStateTrack(1) then
+					MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2), MusicAPI.GetStateTrack(6))
 				end
 			end
 		end
@@ -174,14 +172,14 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		if MusicAPI.State.Phase == 2 then
 			if cache.Room:IsClear() then
 				MusicAPI.State.Phase = 0
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[4], MusicAPI.State.Tracks[6])
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(4), MusicAPI.GetStateTrack(6))
 			end
 		end
 		
 		if MusicAPI.State.Phase == 3 then
 			if cache.Room:IsClear() then
 				MusicAPI.State.Phase = 0
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[6])
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(6))
 			end
 		end
 	end,
@@ -189,13 +187,13 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		if MusicAPI.State.Phase == 1 then
 			if cache.CountBosses > 0 then
 				MusicAPI.State.Phase = 2
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[1])
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(1))
 			end
 		end
 		
 		if MusicAPI.State.Phase == 2 then
 			if cache.CountBosses == 0 then
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[2], "ROOM_BOSS_CLEAR")
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2), "ROOM_BOSS_CLEAR")
 				MusicAPI.ClearState()
 			end
 		end
@@ -204,13 +202,13 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 		if MusicAPI.State.Phase == 1 then
 			if cache.Room:GetFrameCount() > 0 then
 				MusicAPI.State.Phase = 2
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[2])
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2))
 			end
 		end
 		
 		if MusicAPI.State.Phase == 2 then
 			if cache.Room:IsClear() then
-				MusicAPI.PlayTrack(MusicAPI.State.Tracks[3], "ROOM_BOSS_CLEAR")
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(3), "ROOM_BOSS_CLEAR")
 				MusicAPI.ClearState()
 			end
 		end
@@ -346,7 +344,7 @@ mod:AddCallback(ModCallbacks.MC_POST_ENTITY_REMOVE, function(self, ent) -- Angel
 	if ent.Variant == 9 then
 		if MusicAPI.State and MusicAPI.State.Type == "AngelBoss" and MusicAPI.State.Phase == 1 then
 			MusicAPI.State.Phase = 2
-			MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
+			MusicAPI.PlayTrack(MusicAPI.GetStateTrack(1))
 		end
 	end
 end, EntityType.ENTITY_EFFECT)

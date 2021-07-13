@@ -400,19 +400,6 @@ do
 end
 
 --[[
-MusicAPI.GetMinibossRoomEntryTrack()
-
-Get the boss track used as if the current room was a miniboss room.
-]]
-function MusicAPI.GetMinibossRoomEntryTrack(boss_id, level_stage, ...)
-	if cache.Room:IsClear() then
-		return "ROOM_BOSS_CLEAR"
-	else
-		return "ROOM_MINIBOSS_ACTIVE"
-	end
-end
-
---[[
 MusicAPI.GetChallengeRoomTrack()
 
 Get the tracks used as if the current room was a challenge room.
@@ -448,7 +435,6 @@ do
 	local jump_table = {
 		[RoomType.ROOM_TREASURE] = MusicAPI.GetTreasureRoomTrack,
 		[RoomType.ROOM_BOSS] = MusicAPI.GetBossRoomEntryTrack,
-		[RoomType.ROOM_MINIBOSS] = MusicAPI.GetMinibossRoomEntryTrack,
 		[RoomType.ROOM_CHALLENGE] = MusicAPI.GetChallengeRoomTrack,
 	}
 
@@ -530,11 +516,24 @@ will use the current phase. The phase doesn't always correspond with the
 track, so no arguments should only be used internally where appropriate.
 ]]
 function MusicAPI.GetStateTrack(n)
-	if MusicAPI.State and MusicAPI.State.Tracks then
-		n = n or MusicAPI.State.Phase or 1
-		for i=n,MusicAPI.State.TrackCount or 16 do
-			local t = MusicAPI.State.Tracks[i]
-			if t then return t end
+	local state = MusicAPI.State
+	local tracks = state.Tracks
+	if state and tracks then
+		--iterate through MusicAPI.State.Tracks from the requested number n, to the final track.
+		--keep going until we find one. If we don't find one, keep searching. If we do find one,
+		--but it isn't playable, check the fallback table.
+		n = n or state.Phase or 1
+		for i=n, state.TrackCount or 16 do
+			local t = tracks[i]
+			if t then
+				if MusicAPI.IsTrackPlayable(t) then
+					return t
+				end
+				if state.Fallbacks then
+					t = state.Fallbacks[i]
+					if t then return t end
+				end
+			end
 		end
 	end
 end
@@ -631,13 +630,17 @@ function MusicAPI.StartMegaSatanBossState(start_jingle, theme_inactive, theme_ma
 	MusicAPI.State = {
 		Type = "MegaSatanBoss",
 		Phase = start_jingle and 1 or 2,
-		TrackStart = start_jingle,
-		TrackInactive = theme_inactive or theme_inactive,
-		TrackMain = theme_main or MusicAPI.GetBossTrack(),
-		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
+		Tracks = {
+			start_jingle,
+			theme_inactive or theme_inactive,
+			theme_main or MusicAPI.GetBossTrack(),
+			end_jingle or MusicAPI.GetBossClearJingle(),
+		},
+		TrackCount = 4,
 	}
 	
-	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.TrackInactive)
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
+	MusicAPI.PlayTrack(MusicAPI.GetStateTrack())
 end
 
 --[[
@@ -657,17 +660,17 @@ function MusicAPI.StartDogmaBossState(intro_theme, theme_main, end_jingle)
 	MusicAPI.State = {
 		Type = "DogmaBoss",
 		Phase = intro_theme and 1 or 2,
-		TrackIntro = intro_theme,
-		TrackMain = theme_main or "BOSS_DOGMA",
-		TrackEnd = end_jingle or "JINGLE_BOSS_DOGMA_CLEAR",
+		Tracks = {
+			intro_theme,
+			theme_main or "BOSS_DOGMA",
+			end_jingle or "JINGLE_BOSS_DOGMA_CLEAR",
+		},
+		TrackCount = 3,
 		Entity = ent,
 	}
 	
-	if not intro_theme then
-		MusicAPI.PlayTrack(MusicAPI.State.TrackMain)
-	else
-		MusicAPI.PlayTrack(MusicAPI.State.TrackIntro)
-	end
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
+	MusicAPI.PlayTrack(MusicAPI.GetStateTrack())
 end
 
 --[[
@@ -682,9 +685,17 @@ function MusicAPI.StartAngelBossState(theme, end_jingle)
 	MusicAPI.State = {
 		Type = "AngelBoss",
 		Phase = 1,
-		TrackMain = theme or MusicAPI.GetBossTrack(),
-		TrackEnd = end_jingle or MusicAPI.GetBossClearJingle(),
+		Tracks = {
+			theme or "BOSS_ANGEL",
+			end_jingle or MusicAPI.GetBossClearJingle(),
+		},
+		Fallbacks = {
+			MusicAPI.GetGenericBossTrack(),
+			MusicAPI.GetBossClearJingle()
+		}
 	}
+	
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
 end
 
 --[[
@@ -704,7 +715,9 @@ function MusicAPI.StartUltraGreedBossState(start_jingle, theme_main, end_jingle)
 			end_jingle or MusicAPI.GetBossClearJingle(),
 		}
 	}
-	MusicAPI.PlayTrack(start_jingle or MusicAPI.State.Tracks[2])
+	
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
+	MusicAPI.PlayTrack(MusicAPI.GetStateTrack())
 end
 
 --[[
@@ -715,31 +728,44 @@ Sets MusicAPI to treat the current room like a miniboss fight.
 Bosses have to be in the room, or else the state will jump straight
 to the ambush clear jingle.
 ]]
-function MusicAPI.StartMinibossState()
+function MusicAPI.StartMinibossState(theme, end_jingle)
 	MusicAPI.State = {
 		Type = "Miniboss",
-		Phase = 2, --starts on 2 like boss without jingle
+		Phase = 1, --starts on 2 like boss without jingle
+		Tracks = {
+			theme or "ROOM_MINIBOSS_ACTIVE",
+			end_jingle or "JINGLE_MINIBOSS_CLEAR",
+		},
+		TrackCount = 2,
 	}
+	
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
+	MusicAPI.PlayTrack(MusicAPI.GetStateTrack())
 end
 
 --[[
-MusicAPI.StartBossAmbushState(string ambush_theme, string ambush_end_jingle, boolean waiting)
+MusicAPI.StartBossAmbushState(string ambush_theme, string ambush_end_jingle, boolean start_instantly)
 
 Sets MusicAPI to treat the current room like a boss ambush (boss challenge room).
 
-If waiting is true, MusicAPI waits for Room_IsAmbushActive before starting, otherwise the ambush
+If start_instantly is false, MusicAPI waits for Room_IsAmbushActive before starting, otherwise the ambush
 is started straight away.
 ]]
-function MusicAPI.StartAmbushState(ambush_theme, ambush_end_jingle, ambush_clear, waiting)
+function MusicAPI.StartAmbushState(ambush_theme, ambush_end_jingle, ambush_clear, start_instantly)
 	MusicAPI.State = {
 		Type = "Ambush",
-		Phase = waiting and 1 or 2,
-		TrackMain = ambush_theme,
-		TrackEnd = ambush_end_jingle,
-		TrackClear = ambush_clear,
+		Phase = start_instantly and 2 or 1,
+		Tracks = {
+			ambush_theme,
+			ambush_end_jingle,
+			ambush_clear,
+		},
+		TrackCount = 3,
 	}
 	
-	if not waiting then
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
+	
+	if start_instantly then
 		MusicAPI.PlayTrack(ambush_theme)
 	end
 end
@@ -752,13 +778,15 @@ function MusicAPI.StartGreedState(enemy_theme, enemy_end_jingle, boss_theme, bos
 		Type = "Greed",
 		Phase = 0,
 		Tracks = {
-			enemy_theme or MusicAPI.GetGreedFightTrack(),
-			enemy_end_jingle or MusicAPI.GetGreedFightOutro(),
+			enemy_theme or MusicAPI.GetGreedFightTrack() or false,
+			enemy_end_jingle or MusicAPI.GetGreedFightOutro() or false,
 			boss_theme or MusicAPI.GetGenericBossTrack(),
 			boss_end_jingle or MusicAPI.GetGenericBossClearJingle(),
 			final_boss_theme or "BOSS_GREEDMODE_EXTRA",
 			calm or "ROOM_BOSS_CLEAR"
-		}
+		},
+		TrackCount = 6,
+		
 		--[[
 			PHASES:
 			0 - INACTIVE
@@ -767,6 +795,8 @@ function MusicAPI.StartGreedState(enemy_theme, enemy_end_jingle, boss_theme, bos
 			3 - BOSS 3
 		]]
 	}
+	
+	MusicAPI.RunOnTrackCallbacksOnList(MusicAPI.State.Tracks, false)
 end
 
 --[[
@@ -1200,11 +1230,11 @@ If called with a table, will run callbacks on each track in place and return it.
 
 Returns new track, music id
 ]]
-function MusicAPI.RunOnTrackCallbacks(track_name, track_flags)
+function MusicAPI.RunOnTrackCallbacks(track_name, track_flags, state)
 	for _, callback in ipairs(MusicAPI.Callbacks.OnTrack) do
-		local r1, r2 = callback(track_name, track_flags)
+		local r1, r2 = callback(track_name, track_flags, state)
 		
-		if r1 then
+		if r1 ~= nil then
 			if type(r1) == "string" then
 				track_name = r1
 				track_flags = MusicAPI.Tracks[track_name] and MusicAPI.Tracks[track_name].Flags or Flagset()
@@ -1229,13 +1259,16 @@ MusicAPI.RunOnTrackCallbacksOnList(table<string> tracks, boolean remove_nils)
 Run callbacks on each track in place and return it.
 ]]
 function MusicAPI.RunOnTrackCallbacksOnList(track_names, remove_nils)
+	local state
+	if MusicAPI.State and track_names == MusicAPI.State.Tracks then state = MusicAPI.State.Type end
+	
 	local size = #track_names
-	for track_idx, track_str in ipairs(track_names) do
+	for track_idx, track_str in pairs(track_names) do
 		local flags
 		if MusicAPI.Tracks[track_str] then
 			flags = MusicAPI.Tracks[track_str].Flags
 		end
-		local ret = MusicAPI.RunOnTrackCallbacks(track_str, flags)
+		local ret = MusicAPI.RunOnTrackCallbacks(track_str, flags, state)
 		if type(ret) == "string" then
 			track_names[track_idx] = ret
 		elseif type(ret) == "number" then
@@ -1337,7 +1370,7 @@ end)
 
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function(self, should_save)
 	if not should_save then
-		MusicAPI.Save.Game = nil
+		MusicAPI.Save.Game = {}
 	end
 	MusicAPI.SaveData()
 end)

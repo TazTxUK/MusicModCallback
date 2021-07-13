@@ -221,6 +221,9 @@ local track_table = {
 		Music = Music.MUSIC_MOMS_HEART_BOSS,
 		Flags = {"BOSS", "STAGE4_2"}
 	},
+	["BOSS_ANGEL"] = {
+		Flags = {"BOSS"}
+	},
 	-- ["BOSS_MOMS_HEART_MAUSOLEUM"] = {
 		-- Music = Music.MUSIC_MOMS_HEART_BOSS,
 		-- Flags = {"BOSS", "STAGE3_2", "REPENTANCE", "BOSS_MOMS_HEART"}
