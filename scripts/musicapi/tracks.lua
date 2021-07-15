@@ -78,11 +78,13 @@ local track_table = {
 	},
 	["STAGE_MIRROR_DOWNPOUR"] = {
 		Music = Music.MUSIC_DOWNPOUR_REVERSE,
-		Flags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE", "STAGE1_2", "STAGE1", "STAGE1_GREED",}
+		Flags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE", "STAGE1_2", "STAGE1"},
+		FadeSpeed = 0.01,
 	},
 	["STAGE_MIRROR_DROSS"] = {
 		Music = Music.MUSIC_DROSS_REVERSE,
-		Flags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE_B", "STAGE1_2", "STAGE1", "STAGE1_GREED"}
+		Flags = {"STAGE", "REPENTANCE", "DIMENSION_ALTERNATE", "STAGETYPE_REPENTANCE_B", "STAGE1_2", "STAGE1"},
+		FadeSpeed = 0.01,
 	},
 	
 	["STAGE_CAVES"] = {
@@ -193,8 +195,9 @@ local track_table = {
 		Flags = {"STAGE", "STAGETYPE_ORIGINAL", "STAGE8"}
 	},
 	["STAGE_DARK_HOME"] = {
-		Music = Music.MUSIC_DARK_CLOSET,
-		Flags = {"STAGE", "STAGETYPE_WOTL", "STAGE8"}
+		Music = Music.MUSIC_ISAACS_HOUSE,
+		Flags = {"STAGE", "STAGETYPE_WOTL", "STAGE8"},
+		FadeSpeed = 1,
 	},
 	
 	["BOSS_REBIRTH"] = {
@@ -286,7 +289,8 @@ local track_table = {
 	},
 	["BOSS_DOGMA"] = {
 		Music = Music.MUSIC_DOGMA_BOSS,
-		Flags = {"BOSS", "STAGE8", "REPENTANCE"}
+		Flags = {"BOSS", "STAGE8", "REPENTANCE"},
+		FadeSpeed = 1,
 	},
 	["BOSS_BEAST"] = {
 		Music = Music.MUSIC_BEAST_BOSS,
@@ -475,6 +479,7 @@ local track_table = {
 		},
 		Flags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
 		Persistence = 1,
+		FadeSpeed = 1,
 	},
 	["JINGLE_GAME_OVER"] = {
 		Music = Music.MUSIC_JINGLE_GAME_OVER,
@@ -492,15 +497,18 @@ local track_table = {
 	["JINGLE_BOSS_DOGMA_CLEAR"] = {
 		Music = Music.MUSIC_JINGLE_DOGMA_OVER,
 		Flags = {"JINGLE", "REPENTANCE"},
+		FadeSpeed = 1,
 	},
 	["JINGLE_STRANGE_DOOR"] = {
 		Music = Music.MUSIC_STRANGE_DOOR_JINGLE,
 		Flags = {"JINGLE", "REPENTANCE"},
+		FadeSpeed = 1,
 	},
 	
 	["INTRO_MOTHERS_SHADOW"] = {
 		Music = Music.MUSIC_MOTHERS_SHADOW_INTRO,
 		Flags = {"INTRO", "REPENTANCE"},
+		FadeSpeed = 1,
 	},
 	["INTRO_DOGMA"] = {
 		Music = Music.MUSIC_DOGMA_INTRO,

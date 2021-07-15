@@ -75,7 +75,7 @@ function MusicAPI.FixID(id)
 	return MusicTranslatedIDs[id] or id
 end
 
-function MusicAPI.AddTrack(name, tags, music, persistence)
+function MusicAPI.AddTrack(name, tbl)
 	local track = {}
 	
 	--Some automatic steps:
@@ -92,17 +92,14 @@ function MusicAPI.AddTrack(name, tags, music, persistence)
 	end
 	
 	--Music
-	track.Music = music
-	
-	--Flags
+	track.Music = tbl.Music
 	track.Flags = Flagset()
-	
-	--Persistence
-	track.Persistence = persistence
+	track.Persistence = tbl.Persistence
+	track.FadeSpeed = tbl.FadeSpeed
 	
 	--Assign Tags to Flags
-	if tags then
-		for _, tag in ipairs(tags) do
+	if tbl.Flags then
+		for _, tag in ipairs(tbl.Flags) do
 			track.Flags:SetBit(MusicAPI.AddTag(tag), true)
 		end
 	end
@@ -1066,7 +1063,12 @@ function MusicAPI.UseQueue()
 		local id = MusicAPI.GetTrackMusic(queue_1)
 		id = MusicAPI.RunOnMusicCallbacks(id)
 		if id then
-			MusicAPI.Crossfade(id)
+			local fade_speed = MusicAPI.Tracks[queue_1].FadeSpeed or 0.08
+			if fade_speed >= 1 then
+				MusicAPI.Play(id)
+			else
+				MusicAPI.Crossfade(id, fade_speed)
+			end
 		end
 	else
 		MusicAPI.Manager:Crossfade(Music.MUSIC_MUSICAPI_NOTHING)
@@ -1074,12 +1076,24 @@ function MusicAPI.UseQueue()
 end
 
 --[[
-MusicAPI.Crossfade(Music music_id)
+MusicAPI.Play(Music music_id)
+
+Calls the MusicManager's play for this music id.
+]]
+function MusicAPI.Play(music_id)
+	MusicAPI.Manager:Play(music_id, 0)
+	MusicAPI.Manager:UpdateVolume()
+	MusicAPI.Manager:Queue(Music.MUSIC_MUSICAPI_QUEUE_POP)
+	MusicAPI.RunOnPlayCallbacks()
+end
+
+--[[
+MusicAPI.Crossfade(Music music_id, number fade_speed = 0.08)
 
 Calls the MusicManager's crossfade for this music id.
 ]]
-function MusicAPI.Crossfade(music_id)
-	MusicAPI.Manager:Crossfade(music_id)
+function MusicAPI.Crossfade(music_id, fade_speed)
+	MusicAPI.Manager:Crossfade(music_id, fade_speed or 0.08)
 	MusicAPI.Manager:Queue(Music.MUSIC_MUSICAPI_QUEUE_POP)
 	MusicAPI.RunOnPlayCallbacks()
 end
@@ -1091,7 +1105,7 @@ Resets all tracks back to their default values.
 ]]
 function MusicAPI.ResetTracks()
 	for track_name, track in pairs(tracks) do
-		MusicAPI.AddTrack(track_name, track.Flags, track.Music, track.Persistence)
+		MusicAPI.AddTrack(track_name, track)
 	end
 end
 
@@ -1103,7 +1117,7 @@ Resets the named track back to its default values.
 function MusicAPI.ResetTrack(track_name)
 	local track = tracks[track_name]
 	if track then
-		MusicAPI.AddTrack(track_name, track.tags, track.music, track.persistence)
+		MusicAPI.AddTrack(track_name, track)
 	end
 end
 
