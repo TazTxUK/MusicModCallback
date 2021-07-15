@@ -477,7 +477,7 @@ local track_table = {
 			Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2,
 			Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3
 		},
-		Flags = {"JINGLE", "JINGLE_TREASURE_ROOM"},
+		Flags = {"JINGLE"},
 		Persistence = 1,
 		FadeSpeed = 1,
 	},

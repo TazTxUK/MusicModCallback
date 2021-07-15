@@ -5,6 +5,7 @@ Isaac.ConsoleOutput("Loading MusicAPI...\n")
 local enums = require("scripts.musicapi.enums")
 Music = enums.Music
 MusicAPI = require("scripts.musicapi.api")
+MusicAPI.Dev = require("scripts.musicapi.dev")
 MMC = require("scripts.musicapi.legacy")
 
 require("scripts.musicapi.gamecallbacks")

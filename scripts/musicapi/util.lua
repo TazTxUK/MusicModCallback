@@ -70,6 +70,14 @@ function util.capitalCase(s)
 	return str
 end
 
+function util.shallowCopy(t)
+	if type(t) ~= "table" then return t end
+	local new = {}
+	for a,b in pairs(t) do new[a] = b end
+	setmetatable(new, getmetatable(t))
+	return new
+end
+
 --TEST (COMMENT OUT ON RELEASE)
 local myFuncAssert1 = util.assertTypeFn({"Vector", "number"}, 1)
 local myFuncAssert2 = util.assertTypeFn({"string", "number"}, 1)

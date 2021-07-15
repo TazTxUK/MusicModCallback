@@ -23,6 +23,7 @@ MusicAPI.Cache = cache
 MusicAPI.Data = data
 
 MusicAPI.TagBit = {}
+MusicAPI.BitTag = {}
 MusicAPI.NextTagSlot = 0
 MusicAPI.NextTemporaryTrackSlot = 0
 
@@ -44,6 +45,7 @@ local mod = MusicAPI.ModMusic
 function MusicAPI.AddTag(tagname)
 	if not MusicAPI.TagBit[tagname] then
 		MusicAPI.TagBit[tagname] = MusicAPI.NextTagSlot
+		MusicAPI.BitTag[MusicAPI.NextTagSlot] = tagname
 		MusicAPI.NextTagSlot = MusicAPI.NextTagSlot + 1
 	end
 	return MusicAPI.TagBit[tagname]
@@ -92,15 +94,24 @@ function MusicAPI.AddTrack(name, tbl)
 	end
 	
 	--Music
-	track.Music = tbl.Music
 	track.Flags = Flagset()
-	track.Persistence = tbl.Persistence
-	track.FadeSpeed = tbl.FadeSpeed
 	
-	--Assign Tags to Flags
-	if tbl.Flags then
-		for _, tag in ipairs(tbl.Flags) do
-			track.Flags:SetBit(MusicAPI.AddTag(tag), true)
+	if tbl then
+		track.Default = {
+			Music = tbl.Music,
+			Persistence = tbl.Persistence,
+			FadeSpeed = tbl.FadeSpeed,
+		}
+		
+		track.Music = util.shallowCopy(track.Default.Music)
+		track.Persistence = tbl.Persistence
+		track.FadeSpeed = tbl.FadeSpeed
+		
+		--Assign Tags to Flags
+		if tbl.Flags then
+			for _, tag in ipairs(tbl.Flags) do
+				track.Flags:SetBit(MusicAPI.AddTag(tag), true)
+			end
 		end
 	end
 	
@@ -108,18 +119,50 @@ function MusicAPI.AddTrack(name, tbl)
 	-- track.Flags:SetBit(MusicAPI.AddTag(name), true)
 	
 	--Add music enum as a tag
-	if music then
+	if track.Music then
 		for music_name, music_id in pairs(Music) do
-			if music == music_id then
+			if track.Music == music_id then
 				track.Flags:SetBit(MusicAPI.AddTag(music_name), true)
 				break
 			end
 		end
-	else
-		track.Flags:SetBit(MusicAPI.AddTag("MUSIC_UNDEFINED"), true)
 	end
 	
 	MusicAPI.Tracks[name] = track
+end
+
+function MusicAPI.TrackSetMusic(name, ...)
+	local musics = {...}
+	local track = MusicAPI.Tracks[name]
+	if not track then return end
+	if #musics <= 1 then
+		track.Music = musics[1]
+	else
+		track.Music = musics
+	end
+end
+
+function MusicAPI.TrackAddMusic(name, ...)
+	local musics = {...}
+	local added = {}
+	local track = MusicAPI.Tracks[name]
+	if not track then return end
+	if type(track.Music) ~= "table" then track.Music = {track.Music} end
+	for i=1,#track.Music do
+		local v = track.Music[i]
+		added[v] = true
+	end
+	for _, id in ipairs(musics) do
+		if not added[id] then
+			table.insert(track.Music, id)
+		end
+	end
+end
+
+function MusicAPI.TrackResetMusic(name)
+	local track = MusicAPI.Tracks[name]
+	if not track then return end
+	track.Music = util.shallowCopy(track.Default.Music)
 end
 
 --[[
@@ -541,7 +584,7 @@ function MusicAPI.GetStateTrack(n)
 end
 
 --[[
-MusicAPI.StartBossState(number|boolean start_jingle)
+MusicAPI.StartBossState(string|boolean start_jingle, string theme, string end_jingle)
 
 Sets MusicAPI to treat the current room like a boss fight.
 
@@ -586,7 +629,7 @@ function MusicAPI.StartUltraGreedPreBossState(theme, end_jingle)
 end
 
 --[[
-MusicAPI.StartSatanBossState(number|boolean start_jingle)
+MusicAPI.StartSatanBossState(string|boolean start_jingle, string theme_inactive, string theme_phase1, string theme_phase2, string end_jingle)
 ]]
 function MusicAPI.StartSatanBossState(start_jingle, theme_inactive, theme_phase1, theme_phase2, end_jingle)
 	if start_jingle == true then
@@ -620,7 +663,7 @@ function MusicAPI.StartSatanBossState(start_jingle, theme_inactive, theme_phase1
 end
 
 --[[
-MusicAPI.StartMegaSatanBossState(number|boolean start_jingle)
+MusicAPI.StartMegaSatanBossState(string|boolean start_jingle, string theme_inactive, string theme_main, string end_jingle)
 ]]
 function MusicAPI.StartMegaSatanBossState(start_jingle, theme_inactive, theme_main, end_jingle)
 	if start_jingle == true then
@@ -723,7 +766,7 @@ function MusicAPI.StartUltraGreedBossState(start_jingle, theme_main, end_jingle)
 end
 
 --[[
-MusicAPI.StartMinibossState()
+MusicAPI.StartMinibossState(theme, end_jingle)
 
 Sets MusicAPI to treat the current room like a miniboss fight.
 
@@ -1427,16 +1470,42 @@ end
 -------------------------------- FUNCTIONS FOR ALTERING DATA --------------------------------
 
 --[[
+MusicAPI.SetBossJingle(BossID boss_id, string track_name)
+
+Boss fights in rooms with this boss id will use the given jingle track.
+]]
+function MusicAPI.SetBossJingle(boss_id, track_name)
+	data.BossJingles[boss_id] = track_name
+end
+
+--[[
+MusicAPI.SetBossClearJingle(BossID boss_id, string track_name)
+
+Boss fights in rooms with this boss id will use the given jingle clear track.
+]]
+function MusicAPI.SetBossClearJingle(boss_id, track_name)
+	data.BossClearJingles[boss_id] = track_name
+end
+
+--[[
 MusicAPI.SetBossTrack(BossID boss_id, string track_name)
 
 Boss fights in rooms with this boss id will use the given track.
 ]]
 function MusicAPI.SetBossTrack(boss_id, track_name)
-	-- if level_stage then
-		-- data.Bosses[boss_id + level_stage << 16] = track_name
-	-- else
-		data.Bosses[boss_id] = track_name
-	-- end
+	data.Bosses[boss_id] = track_name
+end
+
+--[[
+MusicAPI.SetBossTracks(BossID boss_id, string start_jingle, string track_name, string clear_jingle)
+
+Set a boss's start jingle, normal theme and clear jingle in one call.
+nil assumes no change. Use false for no track.
+]]
+function MusicAPI.SetBossTrack(boss_id, start_jingle, track_name, clear_jingle)
+	if start_jingle ~= nil then MusicAPI.SetBossJingle(boss_id, start_jingle) end
+	if start_jingle ~= nil then MusicAPI.SetBossTrack(boss_id, track_name) end
+	if start_jingle ~= nil then MusicAPI.SetBossClearJingle(boss_id, clear_jingle) end
 end
 
 -------------------------------- GAME CALLBACKS --------------------------------

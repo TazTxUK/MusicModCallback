@@ -63,6 +63,12 @@ object_index.SetBit = function(self, n, bool)
 	end
 end
 
+object_index.GetBit = function(self, n)
+	local pos1 = math.floor(n / 64)
+	local pos2 = n - pos1 * 64
+	return ((self[pos1 + 1] >> pos2) & 1) > 0
+end
+
 object_index.Equals = function(self, rhs)
 	for i=1,size do
 		if self[i] ~= rhs[i] then
