@@ -2,6 +2,10 @@
 	<!-- MUSICAPI BEGIN -->
 	<track name="MusicAPI Queue Pop" path="" loop="true" />
 	<track name="MusicAPI Nothing" path="" loop="true" />
+	
+	<track name="MusicAPI Demo Track" intro="taz/track intro.ogg" path="taz/track loop.ogg" loop="true" />
+	<track name="MusicAPI Demo Jingle In" path="taz/jingle in.ogg" loop="false" />
+	<track name="MusicAPI Demo Jingle Out" path="taz/jingle out.ogg" loop="false" />
 	<!-- MUSICAPI END -->
 	
 	<track name="Basement" intro="Diptera Sonata Intro.ogg" path="Diptera Sonata(Basement).ogg" layerintro="Diptera Layer Intro.ogg" layer="Diptera Layer.ogg" loop="true" />

@@ -2,8 +2,6 @@ assert(_VERSION == "Lua 5.3", "The game is no longer using Lua 5.3! Alert the mo
 
 local MusicAPI = {}
 
-local Flagset = require "scripts.musicapi.flagset"
-local Query = require "scripts.musicapi.query"
 local util = require "scripts.musicapi.util"
 local enums = require "scripts.musicapi.enums"
 local cache = require "scripts.musicapi.cache"
@@ -12,8 +10,6 @@ local tracks = require "scripts.musicapi.tracks"
 
 MusicAPI.APIVersion = {3, 0}
 
-MusicAPI.Flagset = Flagset
-MusicAPI.Query = require "scripts.musicapi.query"
 MusicAPI.Util = util
 local MusicOld = enums.MusicOld
 local Music = enums.Music
@@ -22,13 +18,7 @@ MusicAPI.Music = Music
 MusicAPI.Cache = cache
 MusicAPI.Data = data
 
-MusicAPI.TagBit = {}
-MusicAPI.BitTag = {}
-MusicAPI.NextTagSlot = 0
-MusicAPI.NextTemporaryTrackSlot = 0
-
 MusicAPI.Tracks = {}
-MusicAPI.TemporaryTracks = {}
 MusicAPI.TrackCallbacks = {}
 
 MusicAPI.Manager = MusicManager()
@@ -41,28 +31,6 @@ MusicAPI.Callbacks = {
 
 MusicAPI.ModMusic = RegisterMod("MusicAPI Music", 1)
 local mod = MusicAPI.ModMusic
-
-function MusicAPI.AddTag(tagname)
-	if not MusicAPI.TagBit[tagname] then
-		MusicAPI.TagBit[tagname] = MusicAPI.NextTagSlot
-		MusicAPI.BitTag[MusicAPI.NextTagSlot] = tagname
-		MusicAPI.NextTagSlot = MusicAPI.NextTagSlot + 1
-	end
-	return MusicAPI.TagBit[tagname]
-end
-
-function MusicAPI.TagIsUsed(tagname)
-	return MusicAPI.TagBit[tagname] and true
-end
-
-function MusicAPI.Flag(s)
-	local value = MusicAPI.TagBit[s]
-	if value then
-		return Flagset.Bit(value)
-	else
-		return Flagset.Bit(MusicAPI.AddTag(s))
-	end
-end
 
 local MusicTranslatedIDs = {}
 MusicAPI.MusicTranslatedIDs = MusicTranslatedIDs
@@ -94,7 +62,7 @@ function MusicAPI.AddTrack(name, tbl)
 	end
 	
 	--Music
-	track.Flags = Flagset()
+	track.Tags = {}
 	
 	if tbl then
 		track.Default = {
@@ -107,23 +75,21 @@ function MusicAPI.AddTrack(name, tbl)
 		track.Persistence = tbl.Persistence
 		track.FadeSpeed = tbl.FadeSpeed
 		
-		--Assign Tags to Flags
-		if tbl.Flags then
-			for _, tag in ipairs(tbl.Flags) do
-				track.Flags:SetBit(MusicAPI.AddTag(tag), true)
+		if tbl.Tags then
+			for _, tag in ipairs(tbl.Tags) do
+				track.Tags[tag] = true
 			end
 		end
 	end
 	
 	--Assign own name as tag
-	-- track.Flags:SetBit(MusicAPI.AddTag(name), true)
+	track.Tags[name] = true
 	
 	--Add music enum as a tag
 	if track.Music then
 		for music_name, music_id in pairs(Music) do
 			if track.Music == music_id then
-				track.Flags:SetBit(MusicAPI.AddTag(music_name), true)
-				break
+				track.Tags[music_name] = true
 			end
 		end
 	end
@@ -155,6 +121,24 @@ function MusicAPI.TrackAddMusic(name, ...)
 	for _, id in ipairs(musics) do
 		if not added[id] then
 			table.insert(track.Music, id)
+		end
+	end
+end
+
+function MusicAPI.TrackRemoveMusic(name, ...)
+	local musics = {...}
+	local removed = {}
+	local track = MusicAPI.Tracks[name]
+	if not track then return end
+	if type(track.Music) ~= "table" then track.Music = {track.Music} end
+	for i=#track.Music,1,-1 do
+		for j=1,#musics do
+			local v = track.Music[i]
+			local u = musics[j]
+			if v == u then
+				table.remove(track.Music, i)
+				break
+			end
 		end
 	end
 end
@@ -872,8 +856,7 @@ MusicAPI.SetRoomTrack(track_name)
 Used internally only. Used to set MusicAPI.CurrentTrack.
 ]]
 function MusicAPI.SetRoomTrack(track_name)
-	local track = MusicAPI.Tracks[track_name]
-	if track then
+	if MusicAPI.IsTrackPlayable(track_name) then
 		MusicAPI.CurrentTrack = track_name
 	end
 end
@@ -988,9 +971,9 @@ do
 		[RoomType.ROOM_CHALLENGE] = function()
 			if not cache.RoomDescriptor.ChallengeDone then
 				if cache.Stage ~= cache.AbsoluteStage then 
-					MusicAPI.StartAmbushState("ROOM_CHALLENGE_BOSS_ACTIVE", "JINGLE_CHALLENGE_BOSS_CLEAR", "ROOM_CHALLENGE_BOSS_CLEAR", true)
+					MusicAPI.StartAmbushState("ROOM_CHALLENGE_BOSS_ACTIVE", "JINGLE_CHALLENGE_BOSS_CLEAR", "ROOM_CHALLENGE_BOSS_CLEAR", false)
 				else
-					MusicAPI.StartAmbushState("ROOM_CHALLENGE_NORMAL_ACTIVE", "JINGLE_CHALLENGE_NORMAL_CLEAR", "ROOM_CHALLENGE_NORMAL_CLEAR", true)
+					MusicAPI.StartAmbushState("ROOM_CHALLENGE_NORMAL_ACTIVE", "JINGLE_CHALLENGE_NORMAL_CLEAR", "ROOM_CHALLENGE_NORMAL_CLEAR", false)
 				end
 			end
 		end,
@@ -998,10 +981,7 @@ do
 
 	function MusicAPI.ReloadRoomTrack()
 		local track_names = {MusicAPI.GetRoomEntryTrack()}
-		
-		MusicAPI.RunOnTrackCallbacksOnList(track_names, true)
-		
-		-- MusicAPI.SetRoomTrack(track_names[1])
+		track_names = MusicAPI.RunOnTrackCallbacksOnList(track_names, true)
 		MusicAPI.PlayTrack(table.unpack(track_names))
 		
 		if MusicAPI.ContinueState == true then
@@ -1084,10 +1064,10 @@ will not be stopped despite the queue being empty.
 function MusicAPI.EmptyQueue(dontStopPlaying)
 	MusicAPI.Queue = {}
 	
-	for track_id, _ in pairs(MusicAPI.TemporaryTracks) do
-		MusicAPI.Tracks[track_id] = nil
-		MusicAPI.TemporaryTracks[track_id] = nil
-	end
+	-- for track_id, _ in pairs(MusicAPI.TemporaryTracks) do
+		-- MusicAPI.Tracks[track_id] = nil
+		-- MusicAPI.TemporaryTracks[track_id] = nil
+	-- end
 	
 	if not dontStopPlaying then
 		MusicAPI.Manager:Crossfade(Music.MUSIC_MUSICAPI_NOTHING)
@@ -1104,7 +1084,7 @@ function MusicAPI.UseQueue()
 	local queue_1 = MusicAPI.Queue[1]
 	if queue_1 then
 		local id = MusicAPI.GetTrackMusic(queue_1)
-		id = MusicAPI.RunOnMusicCallbacks(id)
+		id = MusicAPI.RunOnMusicCallbacks(queue_1, id)
 		if id then
 			local fade_speed = MusicAPI.Tracks[queue_1].FadeSpeed or 0.08
 			if fade_speed >= 1 then
@@ -1115,6 +1095,15 @@ function MusicAPI.UseQueue()
 		end
 	else
 		MusicAPI.Manager:Crossfade(Music.MUSIC_MUSICAPI_NOTHING)
+	end
+	
+	for _, track_name in ipairs(MusicAPI.Queue) do
+		local track = MusicAPI.Tracks[track_name]
+		if track then
+			if not track.Tags.JINGLE then
+				MusicAPI.SetRoomTrack(track_name)
+			end
+		end
 	end
 end
 
@@ -1199,28 +1188,13 @@ MusicAPI.TestQueueAllJingles()
 
 A test. Queues all tracks with the JINGLE flag.
 ]]
-local isJingle = Query() & MusicAPI.Flag("JINGLE")
 function MusicAPI.TestQueueAllJingles()
 	MusicAPI.EmptyQueue(true)
 	for track_name, track in pairs(MusicAPI.Tracks) do
-		if isJingle(track.Flags) then
+		if track.Tags.JINGLE then
 			MusicAPI.QueueTrack(track_name)
 		end
 	end
-end
-
---[[
-MusicAPI.AddTemporaryTrack(Music track_id)
-
-Adds a temporary track for the id given. Returns the track name.
-This temporary track name becomes invalid once it gets removed from the queue.
-]]
-function MusicAPI.AddTemporaryTrack(track_id, persistence)
-	local name = "TEMP_" .. MusicAPI.NextTemporaryTrackSlot
-	MusicAPI.NextTemporaryTrackSlot = MusicAPI.NextTemporaryTrackSlot + 1
-	MusicAPI.AddTrack(name, nil, track_id, persistence)
-	MusicAPI.TemporaryTracks[name] = true
-	return name
 end
 
 local AddCallbackAssert1 = util.assertTypeFn({"function"}, 1)
@@ -1264,7 +1238,7 @@ end
 --[[
 MusicAPI.AddOnTrackCallback(function func)
 
-Takes a function that takes a string (track name) and a MusicAPI.Flagset.
+Takes a function that takes a string (track name) and a MusicAPI.State.Type string.
 The function given will be called every time a track is requested.
 
 First return value:
@@ -1287,64 +1261,75 @@ function MusicAPI.AddOnTrackCallback(func)
 end
 
 --[[
-MusicAPI.RunOnTrackCallbacks(string track, number musicID, MusicAPI.Flagset flags)
-MusicAPI.RunOnTrackCallbacks(table<string> tracks, boolean remove_nils)
+MusicAPI.RunOnTrackCallbacks(string track, string|nil state)
 
 Runs all OnTrack callbacks.
 
 Returns new track
 ]]
-function MusicAPI.RunOnTrackCallbacks(track_name, track_flags, state)
+function MusicAPI.RunOnTrackCallbacks(track_name, state)
+	local tracks = {track_name}
+
 	for _, callback in ipairs(MusicAPI.Callbacks.OnTrack) do
-		local r1, r2 = callback(track_name, track_flags, state)
+		local continue 
+		tracks, continue = callback(tracks[#tracks], state)
 		
-		if r1 ~= nil then
-			if type(r1) == "string" then
-				track_name = r1
-				track_flags = MusicAPI.Tracks[track_name] and MusicAPI.Tracks[track_name].Flags or Flagset()
-			elseif type(r1) == "number" then
-				return r1
-			elseif r1 == false then
-				return r1
-			end
+		if continue == nil then
+			continue = not tracks
 		end
 		
-		if r1 ~= nil and not r2 then
+		if not continue then
 			break
 		end
 	end
 	
-	return track_name
+	return tracks
 end
 
 --[[
-MusicAPI.RunOnTrackCallbacksOnList(table<string> tracks, boolean remove_nils)
+MusicAPI.RunOnTrackCallbacksOnList(table<string> tracks, boolean list_is_queue)
 
-Run callbacks on each track in place and return it.
+Run callbacks on each track and return a new list.
 ]]
-function MusicAPI.RunOnTrackCallbacksOnList(track_names, remove_nils)
+function MusicAPI.RunOnTrackCallbacksOnList(track_names, list_is_queue)
 	local state
 	if MusicAPI.State and track_names == MusicAPI.State.Tracks then state = MusicAPI.State.Type end
 	
-	local size = #track_names
-	for track_idx, track_str in pairs(track_names) do
-		local flags
-		if MusicAPI.Tracks[track_str] then
-			flags = MusicAPI.Tracks[track_str].Flags
+	if list_is_queue then
+		local new_track_names = {}
+		for track_idx, track_str in pairs(track_names) do
+			local ret = MusicAPI.RunOnTrackCallbacks(track_str, state)
+			if type(ret) == "string" or type(ret) == "table" then
+				new_track_names[track_idx] = ret
+			else
+				new_track_names[track_idx] = false
+			end
 		end
-		local ret = MusicAPI.RunOnTrackCallbacks(track_str, flags, state)
-		if type(ret) == "string" then
-			track_names[track_idx] = ret
-		elseif type(ret) == "number" then
-			track_names[track_idx] = MusicAPI.AddTemporaryTrack(ret)
-		elseif ret == false then
-			track_names[track_idx] = nil
+		
+		local newer_track_names = {}
+		local function addAll(t)
+			for a,b in ipairs(t) do
+				if b then
+					if type(b) == "table" then
+						addAll(b)
+					else
+						newer_track_names[#newer_track_names + 1] = b
+					end
+				end
+			end
 		end
-	end
-	
-	if remove_nils then
-		for i=size,1,-1 do
-			if track_names[i] == nil then table.remove(track_names, i) end
+		addAll(new_track_names)
+		
+		return newer_track_names
+	else
+		for track_idx, track_str in pairs(track_names) do
+			local ret = MusicAPI.RunOnTrackCallbacks(track_str, state)
+			ret = ret[#ret]
+			if type(ret) == "string" then
+				track_names[track_idx] = ret
+			else
+				track_names[track_idx] = nil
+			end
 		end
 	end
 	
@@ -1356,7 +1341,7 @@ MusicAPI.Callbacks.OnMusic = {Req = {}}
 --[[
 MusicAPI.AddOnMusicCallback(function func)
 
-Takes a function that takes a music ID.
+Takes a function that takes a track and a music ID.
 The function given will be called every time a music ID is played.
 ]]
 function MusicAPI.AddOnMusicCallback(func, req)
@@ -1395,10 +1380,18 @@ Runs all OnMusic and Legacy callbacks.
 
 Returns music id
 ]]
-function MusicAPI.RunOnMusicCallbacks(music_id)
+function MusicAPI.RunOnMusicCallbacks(track, music_id)
+	if MusicAPI.Callbacks.OnMusic.Req[track] then
+		for _, callback in ipairs(MusicAPI.Callbacks.OnMusic.Req[track]) do
+			local res = tonumber(callback(track, music_id) or nil)
+			if res == -1 then return end
+			if res then return res end
+		end
+	end
+	
 	if MusicAPI.Callbacks.OnMusic.Req[music_id] then
 		for _, callback in ipairs(MusicAPI.Callbacks.OnMusic.Req[music_id]) do
-			local res = tonumber(callback(music_id))
+			local res = tonumber(callback(track, music_id) or nil)
 			if res == -1 then return end
 			if res then return res end
 		end
@@ -1406,20 +1399,20 @@ function MusicAPI.RunOnMusicCallbacks(music_id)
 	
 	if MusicAPI.Callbacks.Legacy.Req[music_id] then
 		for _, callback in ipairs(MusicAPI.Callbacks.Legacy.Req[music_id]) do
-			local res = tonumber(callback(music_id))
+			local res = tonumber(callback(music_id) or nil)
 			if res == 0 then return end
 			if res then return res end
 		end
 	end
 	
 	for _, callback in ipairs(MusicAPI.Callbacks.OnMusic) do
-		local res = tonumber(callback(music_id))
+		local res = tonumber(callback(track, music_id) or nil)
 		if res == -1 then return end
 		if res then return res end
 	end
 	
 	for _, callback in ipairs(MusicAPI.Callbacks.Legacy) do
-		local res = tonumber(callback(music_id))
+		local res = tonumber(callback(music_id) or nil)
 		if res == 0 then return end
 		if res then return res end
 	end

@@ -11,6 +11,11 @@ mod.Manager = MusicManager()
 --Callbacks that control the music flow. Callbacks assisting the actual API
 --are still in api.lua.
 
+--[[
+BUGS
+- Entering a challenge room
+]]
+
 local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of having loads of elseifs. In theory, runs faster.
 	Boss = function()
 		if MusicAPI.State.Phase == 1 then
@@ -134,7 +139,7 @@ local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of hav
 	
 		if MusicAPI.State.Phase == 2 then
 			if cache.Room:IsAmbushDone() then
-				MusicAPI.PlayTracks{MusicAPI.GetStateTrack(2), MusicAPI.GetStateTrack(3)}
+				MusicAPI.PlayTrack(MusicAPI.GetStateTrack(2), MusicAPI.GetStateTrack(3))
 				MusicAPI.ClearState()
 			end
 		end
@@ -250,24 +255,33 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 
 	MusicAPI.Doors = {}
 	MusicAPI.Doors.Secret = {}
+	MusicAPI.Doors.SuperSecret = {}
 	
-	for i=0,7 do
-		local door = cache.Room:GetDoor(i)
-		if door then
-			if door.TargetRoomType == RoomType.ROOM_SECRET or door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
-				if door:GetVariant() == DoorVariant.DOOR_HIDDEN then
-					if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
-						table.insert(MusicAPI.Doors.Secret, door)
+	if not cache.Level:GetCanSeeEverything() then
+		for i=0,7 do
+			local door = cache.Room:GetDoor(i)
+			if door then
+				if door.TargetRoomType == RoomType.ROOM_SECRET then
+					if door:GetVariant() == DoorVariant.DOOR_HIDDEN then
+						if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
+							table.insert(MusicAPI.Doors.Secret, door)
+						end
 					end
-				end
-			elseif door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
-				if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and cache.Level:GetCurrentRoomDesc().VisitedCount == 1 then
-					MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
-				end
-			elseif door.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
-				if door:GetVariant() ~= DoorVariant.DOOR_UNLOCKED then
-					if cache.Stage == LevelStage.STAGE3_2 and cache.StageType < StageType.STAGETYPE_REPENTANCE then
-						MusicAPI.Doors.Strange = door
+				elseif door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
+					if door:GetVariant() == DoorVariant.DOOR_HIDDEN then
+						if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
+							table.insert(MusicAPI.Doors.SuperSecret, door)
+						end
+					end
+				elseif door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
+					if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and cache.Level:GetCurrentRoomDesc().VisitedCount == 1 then
+						MusicAPI.PlayJingle("JINGLE_ULTRA_SECRET_ROOM")
+					end
+				elseif door.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
+					if door:GetVariant() ~= DoorVariant.DOOR_UNLOCKED then
+						if cache.Stage == LevelStage.STAGE3_2 and cache.StageType < StageType.STAGETYPE_REPENTANCE then
+							MusicAPI.Doors.Strange = door
+						end
 					end
 				end
 			end
@@ -297,11 +311,21 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, function()
 end)
 
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, function(self)
-	for i=#MusicAPI.Doors.Secret,1,-1 do
-		local door = MusicAPI.Doors.Secret[i]
-		if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
-			table.remove(MusicAPI.Doors.Secret, i)
-			MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
+	if not cache.Level:GetCanSeeEverything() then
+		for i=#MusicAPI.Doors.Secret,1,-1 do
+			local door = MusicAPI.Doors.Secret[i]
+			if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
+				table.remove(MusicAPI.Doors.Secret, i)
+				MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
+			end
+		end
+		
+		for i=#MusicAPI.Doors.SuperSecret,1,-1 do
+			local door = MusicAPI.Doors.SuperSecret[i]
+			if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
+				table.remove(MusicAPI.Doors.SuperSecret, i)
+				MusicAPI.PlayJingle("JINGLE_SUPER_SECRET_ROOM")
+			end
 		end
 	end
 	

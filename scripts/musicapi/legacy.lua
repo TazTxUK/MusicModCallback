@@ -5,7 +5,7 @@ local legacy = {} --DON'T USE ANY FUNCTIONS IN THIS FILE: FOR VERSION 1,2 BACKWA
 legacy.AddMusicCallback = MusicAPI.AddLegacyCallback
 
 function legacy.GetMusicTrack()
-	return MusicAPI.GetTrackMusic(MusicAPI.GetRoomEntryTrack())
+	return MusicAPI.GetTrackMusic(MusicAPI.GetRoomTrack())
 end
 
 function legacy.GetBossTrack()

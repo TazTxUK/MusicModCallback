@@ -73,7 +73,7 @@ function dev.GenerateTrackMarkdownTable()
 		end
 		
 		i = 1
-		t[i] = t[i] .. "**Flags**"
+		t[i] = t[i] .. "**Tags**"
 		target_length = math.max(target_length, t[i]:len())
 		i = i + 1
 		-- t[i] = t[i] .. ""
@@ -81,15 +81,13 @@ function dev.GenerateTrackMarkdownTable()
 		i = i + 1
 		for a,b in pairs(MusicAPI.Tracks) do
 			if a:sub(1,cat:len()) == cat then
-				local flags = {}
+				local tags = {}
 				
-				for n=0,MusicAPI.NextTagSlot - 1 do
-					if b.Flags:GetBit(n) then
-						flags[#flags + 1] = "`"..MusicAPI.BitTag[n].."`"
-					end
+				for tag,_ in pairs(b.Tags) do
+					tags[#tags + 1] = "`"..tag.."`"
 				end
 				
-				t[i] = t[i] .. table.concat(flags, ", ")
+				t[i] = t[i] .. table.concat(tags, ", ")
 				target_length = math.max(target_length, t[i]:len())
 				i = i + 1
 			end
@@ -107,7 +105,7 @@ function dev.GenerateTrackMarkdownTable()
 	return final
 end
 
-function dev.GenerateFlagMarkdownTable()
+function dev.GenerateTagMarkdownTable()
 	local final = ""
 	
 	local tags = {}
@@ -148,13 +146,3 @@ function dev.GenerateFlagMarkdownTable()
 end
 
 return dev
-
---[[
-
-| Tables   |      Are      |  Cool |
-|----------|:-------------:|------:|
-| col 1 is |  left-aligned | $1600 |
-| col 2 is |    centered   |   $12 |
-| col 3 is | right-aligned |    $1 |
-
-]]

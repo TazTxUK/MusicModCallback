@@ -15,7 +15,7 @@ MusicAPI.PreGameStart()
 
 Isaac.ConsoleOutput("MusicAPI loaded successfully.\n")
 
-local mod = RegisterMod("", 1)
+local mod = RegisterMod("MusicAPI Debug Info", 1)
 
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	if MusicAPI.ShowDebugInfo then
@@ -34,11 +34,12 @@ mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 		y = y + 12
 		Isaac.RenderText(s2, 50, y, 0.8, 0.8, 0.8, 1.0)
 		y = y + 12
-		Isaac.RenderText("MusicAPI Queue:", 50, y, 0.2, 0.2, 1.0, 1.0)
+		Isaac.RenderText("MusicAPI Queue ("..#MusicAPI.Queue.."):", 50, y, 0.2, 0.2, 1.0, 1.0)
 		y = y + 12
 		for i=1,4 do
 			local item = MusicAPI.Queue[i]
 			if item then
+				if type(item) ~= "string" then _G.B = item end
 				Isaac.RenderText(tostring(item), 50, y, 0.8, 0.8, 0.8, 1.0)
 			end
 			y = y + 12
@@ -55,8 +56,21 @@ mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	end
 end)
 
-MusicAPI.AddOnPlayCallback(function(trigger_name, track_id)
-	if MusicAPI.ShowDebugInfo then
-		Isaac.ConsoleOutput("Now Playing: "..trigger_name.." ("..track_id..")\n")
-	end
-end)
+-- MusicAPI.AddOnPlayCallback(function(trigger_name, track_id)
+	-- if MusicAPI.ShowDebugInfo then
+		-- Isaac.ConsoleOutput("Now playing:\n Track: "..trigger_name.."\n ID: "..track_id.."\n")
+	-- end
+-- end)
+
+-- MusicAPI.AddOnMusicCallback(function(track_name, music_id)
+	-- if track_name == "ROOM_SHOP" then
+		-- if Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE or Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE_B then
+			-- return Music.MUSIC_MUSICAPI_DEMO_TRACK
+		-- end
+	-- end
+-- end)
+
+-- MusicAPI.TrackAddMusic("ROOM_TREASURE", Music.MUSIC_MUSICAPI_DEMO_TRACK)
+-- MusicAPI.TrackAddMusic("ROOM_CURSE", Music.MUSIC_MUSICAPI_DEMO_TRACK)
+
+-- MusicAPI.TrackAddMusic("JINGLE_TREASURE_ROOM", Music.MUSIC_MUSICAPI_DEMO_JINGLE_IN, Music.MUSIC_MUSICAPI_DEMO_JINGLE_OUT)
