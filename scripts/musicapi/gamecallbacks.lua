@@ -11,11 +11,6 @@ mod.Manager = MusicManager()
 --Callbacks that control the music flow. Callbacks assisting the actual API
 --are still in api.lua.
 
---[[
-BUGS
-- Entering a challenge room
-]]
-
 local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of having loads of elseifs. In theory, runs faster.
 	Boss = function()
 		if MusicAPI.State.Phase == 1 then
@@ -257,31 +252,29 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	MusicAPI.Doors.Secret = {}
 	MusicAPI.Doors.SuperSecret = {}
 	
-	if not cache.Level:GetCanSeeEverything() then
-		for i=0,7 do
-			local door = cache.Room:GetDoor(i)
-			if door then
-				if door.TargetRoomType == RoomType.ROOM_SECRET then
-					if door:GetVariant() == DoorVariant.DOOR_HIDDEN then
-						if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
-							table.insert(MusicAPI.Doors.Secret, door)
-						end
+	for i=0,7 do
+		local door = cache.Room:GetDoor(i)
+		if door then
+			if door.TargetRoomType == RoomType.ROOM_SECRET then
+				if door:GetVariant() == DoorVariant.DOOR_HIDDEN then
+					if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
+						table.insert(MusicAPI.Doors.Secret, door)
 					end
-				elseif door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
-					if door:GetVariant() == DoorVariant.DOOR_HIDDEN then
-						if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
-							table.insert(MusicAPI.Doors.SuperSecret, door)
-						end
+				end
+			elseif door.TargetRoomType == RoomType.ROOM_SUPERSECRET then
+				if door:GetVariant() == DoorVariant.DOOR_HIDDEN then
+					if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 then
+						table.insert(MusicAPI.Doors.SuperSecret, door)
 					end
-				elseif door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
-					if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and cache.Level:GetCurrentRoomDesc().VisitedCount == 1 then
-						MusicAPI.PlayJingle("JINGLE_ULTRA_SECRET_ROOM")
-					end
-				elseif door.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
-					if door:GetVariant() ~= DoorVariant.DOOR_UNLOCKED then
-						if cache.Stage == LevelStage.STAGE3_2 and cache.StageType < StageType.STAGETYPE_REPENTANCE then
-							MusicAPI.Doors.Strange = door
-						end
+				end
+			elseif door.TargetRoomType == RoomType.ROOM_ULTRASECRET then
+				if cache.Level:GetRoomByIdx(door.TargetRoomIndex).VisitedCount == 0 and cache.Level:GetCurrentRoomDesc().VisitedCount == 1 then
+					MusicAPI.PlayJingle("JINGLE_ULTRA_SECRET_ROOM")
+				end
+			elseif door.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
+				if door:GetVariant() ~= DoorVariant.DOOR_UNLOCKED then
+					if cache.Stage == LevelStage.STAGE3_2 and cache.StageType < StageType.STAGETYPE_REPENTANCE then
+						MusicAPI.Doors.Strange = door
 					end
 				end
 			end
@@ -311,19 +304,23 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, function()
 end)
 
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, function(self)
-	if not cache.Level:GetCanSeeEverything() then
-		for i=#MusicAPI.Doors.Secret,1,-1 do
-			local door = MusicAPI.Doors.Secret[i]
-			if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
-				table.remove(MusicAPI.Doors.Secret, i)
+	local doJingle = not (cache.Level:GetCanSeeEverything() or cache.COLLECTIBLE_XRAY_VISION)
+
+	for i=#MusicAPI.Doors.Secret,1,-1 do
+		local door = MusicAPI.Doors.Secret[i]
+		if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
+			table.remove(MusicAPI.Doors.Secret, i)
+			if doJingle then
 				MusicAPI.PlayJingle("JINGLE_SECRET_ROOM")
 			end
 		end
-		
-		for i=#MusicAPI.Doors.SuperSecret,1,-1 do
-			local door = MusicAPI.Doors.SuperSecret[i]
-			if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
-				table.remove(MusicAPI.Doors.SuperSecret, i)
+	end
+	
+	for i=#MusicAPI.Doors.SuperSecret,1,-1 do
+		local door = MusicAPI.Doors.SuperSecret[i]
+		if door:GetVariant() == DoorVariant.DOOR_UNLOCKED then
+			table.remove(MusicAPI.Doors.SuperSecret, i)
+			if doJingle then
 				MusicAPI.PlayJingle("JINGLE_SUPER_SECRET_ROOM")
 			end
 		end

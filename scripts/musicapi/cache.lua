@@ -30,6 +30,15 @@ function cache.ReloadRoomCache()
 		cache.Dimension = 1
 	end
 	
+	--Items
+	cache.COLLECTIBLE_XRAY_VISION = false
+	for _, player in ipairs(Isaac.FindByType(EntityType.ENTITY_PLAYER,0)) do
+		if player:ToPlayer():HasCollectible(CollectibleType.COLLECTIBLE_XRAY_VISION) then
+			cache.COLLECTIBLE_XRAY_VISION = true
+			break
+		end
+	end
+	
 	--Game states
 	cache.STATE_BACKWARDS_PATH = cache.Game:GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and cache.Stage <= 6
 	cache.STATE_MINESHAFT_ESCAPE = cache.Level:GetStateFlag(LevelStateFlag.STATE_MINESHAFT_ESCAPE) and cache.Dimension == 1
@@ -52,5 +61,11 @@ end
 cache.ReloadRenderCache()
 
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, cache.ReloadRenderCache)
+
+mod:AddCallback(ModCallbacks.MC_POST_GET_COLLECTIBLE, function(self, collectibleType)
+	if collectibleType == CollectibleType.COLLECTIBLE_XRAY_VISION then
+		cache.COLLECTIBLE_XRAY_VISION = true
+	end
+end)
 
 return cache
