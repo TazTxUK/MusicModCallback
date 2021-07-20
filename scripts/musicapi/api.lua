@@ -993,6 +993,10 @@ do
 		local j = ReloadRoomTrack_JumpTable[cache.RoomType]
 		if j then j() end
 		
+		if cache.RoomDescriptor.SurpriseMiniboss then
+			ReloadRoomTrack_JumpTable[RoomType.ROOM_MINIBOSS]()
+		end
+		
 		if not MusicAPI.State then
 			if cache.Game:IsGreedMode() then
 				for i=1,cache.Room:GetGridSize() do

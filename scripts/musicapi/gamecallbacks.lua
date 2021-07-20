@@ -11,6 +11,12 @@ mod.Manager = MusicManager()
 --Callbacks that control the music flow. Callbacks assisting the actual API
 --are still in api.lua.
 
+--[[
+TODO:
+- Mineshaft escape
+- Death cert crash
+]]
+
 local PostRender_State_JumpTable = { -- TAZ: Jump tables are used instead of having loads of elseifs. In theory, runs faster.
 	Boss = function()
 		if MusicAPI.State.Phase == 1 then
@@ -296,7 +302,7 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 end)
 
 mod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, function()
-	if cache.Stage == LevelStage.STAGE2_2 and cache.StageType == StageType.STAGETYPE_REPENTANCE then
+	if cache.Stage == LevelStage.STAGE2_2 and (cache.StageType == StageType.STAGETYPE_REPENTANCE or cache.StageType == StageType.STAGETYPE_REPENTANCE_B) then
 		MusicAPI.Save.Game.MinesButtons = {}
 	else
 		MusicAPI.Save.Game.MinesButtons = nil
