@@ -285,28 +285,25 @@ musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO] = {
 local soundJingleTimer --renamed treasure_jingle_timer
 local soundJingleVolume = false --renamed treasure_volume
 local soundJingles = {}
---[[
---we can uncomment and finish up this block once custom sounds are fixed
---replaced Beast Growl (sound id 815) with .wav trasure jingles during testing
+
 soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_0] = {
-	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 1")
+	["id"] = Isaac.GetSoundIdByName("Treasure Jingle 1"),
 }
 soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_1] = {
-	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 2")
+	["id"] = Isaac.GetSoundIdByName("Treasure Jingle 2"),
 }
 soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_2] = {
-	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 3")
+	["id"] = Isaac.GetSoundIdByName("Treasure Jingle 3"),
 }
 soundJingles[Music.MUSIC_JINGLE_TREASUREROOM_ENTRY_3] = {
-	["id"] = 815, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Treasure Jingle 4")
+	["id"] = Isaac.GetSoundIdByName("Treasure Jingle 4"),
 }
 soundJingles[Music.MUSIC_JINGLE_SECRETROOM_FIND] = {
-	["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Secret Room Jingle")
+	["id"] = Isaac.GetSoundIdByName("Secret Room Jingle"),
 }
 soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
-	["id"] = 0, --once custom sounds are fixed, will be something like Isaac.GetSoundIdByName("Strange Door Jingle")
+	["id"] = Isaac.GetSoundIdByName("Strange Door Jingle"),
 }
---]]
 
 local stageapiexists = false
 
