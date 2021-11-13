@@ -1306,7 +1306,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			previousbosscount = currentbosscount
-		elseif level:GetStage() == LevelStage.STAGE3_2 and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
+		elseif (level:GetStage() == LevelStage.STAGE3_2 or (level:GetStage() == LevelStage.STAGE3_1 and (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH)) and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
 			local topDoor = room:GetDoor(DoorSlot.UP0)
 			if topDoor and topDoor.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
 				local strangedoorstatenow = topDoor.State
