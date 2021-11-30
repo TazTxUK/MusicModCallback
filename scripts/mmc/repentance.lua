@@ -854,7 +854,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function() --thi
 		
 		local room = Game():GetRoom()
 		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
-			musicJingles[currentMusicId]["nexttrack"] = getBossMusic()
+			musicJingles[currentMusicId]["nexttrack"] = nil
 		else
 			waitingforgamestjingle = false --trick getMusicTrack into giving us the track early
 			musicJingles[currentMusicId]["nexttrack"] = getMusicTrack()
@@ -1097,10 +1097,9 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				if v["nexttrack"] then
 					--Isaac.DebugString("nexttrack found to be "..tostring(v["nexttrack"]))
 					musicCrossfade(v["nexttrack"])
+					v["nexttrack"] = nil
 				else --failsafe for game start jingles, but nexttrack should be set for those, too
-					if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
-						musicCrossfade(getBossMusic())
-					else
+					if room:GetType() ~= RoomType.ROOM_BOSS or room:IsClear() then
 						musicCrossfade(getMusicTrack())
 					end
 				end
