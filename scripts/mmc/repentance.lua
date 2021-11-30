@@ -220,6 +220,37 @@ chapter_music_greed[LevelStage.STAGE6_GREED] = {
 
 chapter_music_greed[LevelStage.STAGE7_GREED] = chapter_music_greed[LevelStage.STAGE6_GREED]
 
+local random_music = { --this is for the "DELETE THIS" challenge
+	[0] = Music.MUSIC_NULL,
+	[1] = Music.MUSIC_BASEMENT,
+	[2] = Music.MUSIC_CELLAR,
+	[3] = Music.MUSIC_BURNING_BASEMENT,
+	[4] = Music.MUSIC_DOWNPOUR,
+	[5] = Music.MUSIC_DROSS,
+	[6] = Music.MUSIC_CAVES,
+	[7] = Music.MUSIC_CATACOMBS,
+	[8] = Music.MUSIC_FLOODED_CAVES,
+	[9] = Music.MUSIC_MINES,
+	[10] = Music.MUSIC_ASHPIT,
+	[11] = Music.MUSIC_DEPTHS,
+	[12] = Music.MUSIC_NECROPOLIS,
+	[13] = Music.MUSIC_DANK_DEPTHS,
+	[14] = Music.MUSIC_MAUSOLEUM,
+	[15] = Music.MUSIC_GEHENNA,
+	[16] = Music.MUSIC_WOMB_UTERO,
+	[17] = Music.MUSIC_UTERO,
+	[18] = Music.MUSIC_SCARRED_WOMB,
+	[19] = Music.MUSIC_CORPSE,
+	[20] = Music.MUSIC_BLUE_WOMB,
+	[21] = Music.MUSIC_SHEOL,
+	[22] = Music.MUSIC_CATHEDRAL,
+	[23] = Music.MUSIC_DARK_ROOM,
+	[24] = Music.MUSIC_CHEST,
+	[25] = Music.MUSIC_VOID,
+	--Music.MUSIC_MORTIS
+}
+local random_music_size = 26
+
 local function correctedTrackNum(n)
 	if redirectmusicenum[n] then
 		return redirectmusicenum[n]
@@ -385,6 +416,10 @@ local function getChapterMusic(floor_type, floor_variant, greed)
 	return chapter[floor_variant] or chapter[StageType.STAGETYPE_ORIGINAL] or Music.MUSIC_TITLE_REPENTANCE
 end
 
+local function getRandomStageMusic(seed)
+	return random_music[(seed % random_music_size)]
+end
+
 --check for death certificate
 MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, function()
 	modSaveData["deathcertificateroom"] = true
@@ -395,6 +430,14 @@ local function getStageMusic()
 	local level = game:GetLevel()
 	local stage = level:GetStage()
 	local stage_type = level:GetStageType()
+	
+	--play random music for "DELETE THIS" challenge
+	if Isaac.GetChallenge() == Challenge.CHALLENGE_DELETE_THIS then
+		local seeds = game:GetSeeds()
+		local stageseed = seeds:GetStageSeed(stage)
+		return getRandomStageMusic(stageseed)
+	end
+	
 	--death certificate check
 	if modSaveData["deathcertificateroom"] then
 		local backdrop = Game():GetRoom():GetBackdropType()
