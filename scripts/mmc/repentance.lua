@@ -378,10 +378,6 @@ setmetatable(weakmusicmgr, weakmusicmgrfuncs)
 setmetatable(weakmusicmgrfuncs, overridemusicmgrfuncs)
 
 function MMC.ResetSave()
-	modSaveData["inmirrorroom"] = false
-	modSaveData["inmirroredworld"] = false
-	modSaveData["inmineroom"] = false
-	modSaveData["inmineshaft"] = false
 	modSaveData["railcomplete"] = false
 	modSaveData["deathcertificateroom"] = false
 	modSaveData["darkhome"] = 0
@@ -528,10 +524,10 @@ local function getMusicTrack()
 	local stage = level:GetStage()
 	local stagetype = level:GetStageType()
 	local roomidx = level:GetCurrentRoomIndex()
-	local ascent = game:GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and stage <= 6
+	local ascent = level:IsAscent()
 	local inrepstage = stagetype == StageType.STAGETYPE_REPENTANCE or stagetype == StageType.STAGETYPE_REPENTANCE_B
 	
-	if modSaveData["inmirroredworld"] and stage == LevelStage.STAGE1_2 and inrepstage then
+	if room:IsMirrorWorld() and stage == LevelStage.STAGE1_2 and inrepstage then
 		if roomtype ~= RoomType.ROOM_BOSS then
 			local stage_type = level:GetStageType()
 			if stage_type == StageType.STAGETYPE_REPENTANCE then
@@ -540,7 +536,7 @@ local function getMusicTrack()
 				return Music.MUSIC_DROSS_REVERSE
 			end
 		end
-	elseif modSaveData["inmineshaft"] and stage == LevelStage.STAGE2_2 and inrepstage then
+	elseif room:HasCurseMist() and stage == LevelStage.STAGE2_2 and inrepstage then
 		if level:GetStateFlag(LevelStateFlag.STATE_MINESHAFT_ESCAPE) then --this flag doesn't seem to be set until leaving the room after Mom's Shadow spawns
 			return Music.MUSIC_MINESHAFT_ESCAPE
 		else
@@ -619,7 +615,7 @@ local function getMusicTrack()
 		return Music.MUSIC_PLANETARIUM
 	elseif roomtype == RoomType.ROOM_ULTRASECRET then
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
-	elseif roomtype == (RoomType.ROOM_SECRET_EXIT or 27) then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
+	elseif roomtype == RoomType.ROOM_SECRET_EXIT then
 		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
 	elseif roomtype == RoomType.ROOM_DUNGEON and stage == LevelStage.STAGE8 and roomidx == -10 then
 		return Music.MUSIC_BEAST_BOSS
@@ -696,7 +692,7 @@ function musicCrossfade(track, track2)
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
 	local faderate = 0.08 --0.08 is default in MusicManager.Crossfade
-	if modSaveData["inmirrorroom"] and mirrorSoundIsPlaying() and Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE then faderate = 0.01 end
+	if mirrorSoundIsPlaying() and Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE then faderate = 0.01 end
 	if not id then
 		return
 	elseif id > 0 then
@@ -921,13 +917,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		local room = Game():GetRoom()
 		local roomtype = room:GetType()
 		local level = Game():GetLevel()
-		local ascent = Game():GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and level:GetStage() <= 6
-		
-		local previousinmirrorroom = modSaveData["inmirrorroom"]
-		modSaveData["inmirrorroom"] = false
-		
-		local previousinmineroom = modSaveData["inmineroom"]
-		modSaveData["inmineroom"] = false
+		local ascent = level:IsAscent()
 		
 		previousgreedwave = 0
 		previousbosscount = 0
@@ -941,12 +931,6 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 			local door = room:GetDoor(i)
 			if door then
 				doorprevvariants[i] = door:GetVariant()
-				
-				if door.TargetRoomIndex == -100 then --the Mirror
-					modSaveData["inmirrorroom"] = true
-				elseif door.TargetRoomIndex == -101 then --the door to the Mineshaft
-					modSaveData["inmineroom"] = true
-				end
 			end
 		end
 		
@@ -965,28 +949,18 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 			end
 		end
 		
-		if previousinmirrorroom and modSaveData["inmirrorroom"] then
-			--this isn't ideal, but I can't find a GameStateFlag or something similar for being in the mirrored world
-			if mirrorSoundIsPlaying() then
-				modSaveData["inmirroredworld"] = (not modSaveData["inmirroredworld"])
-			end
-		elseif previousinmineroom and modSaveData["inmineroom"] then
-			--I'm concerned that a teleporting item or the D7 (restart room) could trigger this
-			modSaveData["inmineshaft"] = (not modSaveData["inmineshaft"])
-		end
-		
 		if not waitingforgamestjingle then
 			--if we need to, we can stop music from playing in a new room
 			local skipCrossfade = false
 			
-			if modSaveData["inmineshaft"] and musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] > 0 then
+			if room:HasCurseMist() and musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] > 0 then
 				skipCrossfade = true
 			else
 				musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] = 0
 			end
 			
 			--NOTE: the room:IsClear() check handles back-to-back Bosses (i.e. XL floors)
-			if (roomtype == (RoomType.ROOM_SECRET_EXIT or 27) or (roomtype == RoomType.ROOM_BOSS and room:IsClear())) and (musicJingles[Music.MUSIC_JINGLE_BOSS_OVER]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3]["timeleft"] > 0) then
+			if (roomtype == RoomType.ROOM_SECRET_EXIT or (roomtype == RoomType.ROOM_BOSS and room:IsClear())) and (musicJingles[Music.MUSIC_JINGLE_BOSS_OVER]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3]["timeleft"] > 0) then
 				--Isaac.DebugString("skipping crossfade for Boss Room or Secret Exit Room")
 				skipCrossfade = true
 			else
@@ -1015,7 +989,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		--NOTE: moved treasure/sound jingle initalization to musicPlay
 		
 		--moved from getMusicTrack to here so we can use musicPlay instead of musicCrossfade
-		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) and not modSaveData["inmirroredworld"] and not ascent then
+		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) and not room:IsMirrorWorld() and not ascent then
 			local rng = math.random(0,3)
 			local treasurejingle
 			if rng == 0 then
@@ -1350,7 +1324,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			previousbosscount = currentbosscount
 		elseif (level:GetStage() == LevelStage.STAGE3_2 or (level:GetStage() == LevelStage.STAGE3_1 and (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH)) and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
 			local topDoor = room:GetDoor(DoorSlot.UP0)
-			if topDoor and topDoor.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
+			if topDoor and topDoor.TargetRoomType == RoomType.ROOM_SECRET_EXIT then
 				local strangedoorstatenow = topDoor.State
 				
 				if strangedoorstatebefore == DoorState.STATE_CLOSED and strangedoorstatenow == DoorState.STATE_OPEN then
@@ -1359,7 +1333,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				
 				strangedoorstatebefore = strangedoorstatenow
 			end
-		elseif modSaveData["inmineshaft"] then
+		elseif room:HasCurseMist() then
 			local foundknifepiecenow
 			
 			local knifetable = Isaac.FindByType(EntityType.ENTITY_PICKUP,PickupVariant.PICKUP_COLLECTIBLE,CollectibleType.COLLECTIBLE_KNIFE_PIECE_2)
