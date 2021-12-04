@@ -221,35 +221,34 @@ chapter_music_greed[LevelStage.STAGE6_GREED] = {
 chapter_music_greed[LevelStage.STAGE7_GREED] = chapter_music_greed[LevelStage.STAGE6_GREED]
 
 local random_music = { --this is for the "DELETE THIS" challenge
-	[0] = Music.MUSIC_NULL,
-	[1] = Music.MUSIC_BASEMENT,
-	[2] = Music.MUSIC_CELLAR,
-	[3] = Music.MUSIC_BURNING_BASEMENT,
-	[4] = Music.MUSIC_DOWNPOUR,
-	[5] = Music.MUSIC_DROSS,
-	[6] = Music.MUSIC_CAVES,
-	[7] = Music.MUSIC_CATACOMBS,
-	[8] = Music.MUSIC_FLOODED_CAVES,
-	[9] = Music.MUSIC_MINES,
-	[10] = Music.MUSIC_ASHPIT,
-	[11] = Music.MUSIC_DEPTHS,
-	[12] = Music.MUSIC_NECROPOLIS,
-	[13] = Music.MUSIC_DANK_DEPTHS,
-	[14] = Music.MUSIC_MAUSOLEUM,
-	[15] = Music.MUSIC_GEHENNA,
-	[16] = Music.MUSIC_WOMB_UTERO,
-	[17] = Music.MUSIC_UTERO,
-	[18] = Music.MUSIC_SCARRED_WOMB,
-	[19] = Music.MUSIC_CORPSE,
-	[20] = Music.MUSIC_BLUE_WOMB,
-	[21] = Music.MUSIC_SHEOL,
-	[22] = Music.MUSIC_CATHEDRAL,
-	[23] = Music.MUSIC_DARK_ROOM,
-	[24] = Music.MUSIC_CHEST,
-	[25] = Music.MUSIC_VOID,
+	[0] = Music.MUSIC_BASEMENT,
+	[1] = Music.MUSIC_CELLAR,
+	[2] = Music.MUSIC_BURNING_BASEMENT,
+	[3] = Music.MUSIC_DOWNPOUR,
+	[4] = Music.MUSIC_DROSS,
+	[5] = Music.MUSIC_CAVES,
+	[6] = Music.MUSIC_CATACOMBS,
+	[7] = Music.MUSIC_FLOODED_CAVES,
+	[8] = Music.MUSIC_MINES,
+	[9] = Music.MUSIC_ASHPIT,
+	[10] = Music.MUSIC_DEPTHS,
+	[11] = Music.MUSIC_NECROPOLIS,
+	[12] = Music.MUSIC_DANK_DEPTHS,
+	[13] = Music.MUSIC_MAUSOLEUM,
+	[14] = Music.MUSIC_GEHENNA,
+	[15] = Music.MUSIC_WOMB_UTERO,
+	[16] = Music.MUSIC_UTERO,
+	[17] = Music.MUSIC_SCARRED_WOMB,
+	[18] = Music.MUSIC_CORPSE,
+	[19] = Music.MUSIC_BLUE_WOMB,
+	[20] = Music.MUSIC_SHEOL,
+	[21] = Music.MUSIC_CATHEDRAL,
+	[22] = Music.MUSIC_DARK_ROOM,
+	[23] = Music.MUSIC_CHEST,
+	[24] = Music.MUSIC_VOID,
 	--Music.MUSIC_MORTIS
 }
-local random_music_size = 26
+local random_music_size = 25
 
 local function correctedTrackNum(n)
 	if redirectmusicenum[n] then
@@ -868,6 +867,24 @@ function MusicModCallback:UpdateSaveValuesForNewFloor()
 	MMC.ResetSave()
 end
 
+function MusicModCallback:InitializeMusicJingles(isContinued) --this function kicks off the Game Start Jingle countdown
+	local currentMusicId = musicmgr:GetCurrentMusicID()
+	if currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT then
+		musicJingles[currentMusicId]["timeleft"] = musicJingles[currentMusicId]["length"]
+		
+		local room = Game():GetRoom()
+		if Isaac.GetChallenge() == Challenge.CHALLENGE_DELETE_THIS and not isContinued then
+			musicJingles[currentMusicId]["nexttrack"] = -1 --fadeout
+		elseif room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
+			musicJingles[currentMusicId]["nexttrack"] = nil
+		else
+			waitingforgamestjingle = false --trick getMusicTrack into giving us the track early
+			musicJingles[currentMusicId]["nexttrack"] = getMusicTrack()
+			waitingforgamestjingle = true --Cyber: "This may not be good code, but I don't want to interfere with the check that Nato added to the beginning of getMusicTrack because I figure it is important for the Soundtrack Menu."
+		end
+	end
+end
+
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.UpdateSaveValuesForNewFloor)
 
@@ -885,22 +902,7 @@ end)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.LoadSaveData)
-
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function() --this function kicks off the Game Start Jingle countdown
-	local currentMusicId = musicmgr:GetCurrentMusicID()
-	if currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT then
-		musicJingles[currentMusicId]["timeleft"] = musicJingles[currentMusicId]["length"]
-		
-		local room = Game():GetRoom()
-		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
-			musicJingles[currentMusicId]["nexttrack"] = nil
-		else
-			waitingforgamestjingle = false --trick getMusicTrack into giving us the track early
-			musicJingles[currentMusicId]["nexttrack"] = getMusicTrack()
-			waitingforgamestjingle = true --Cyber: "This may not be good code, but I don't want to interfere with the check that Nato added to the beginning of getMusicTrack because I figure it is important for the Soundtrack Menu."
-		end
-	end
-end)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.InitializeMusicJingles)
 
 function MusicModCallback:PlayGameOverMusic(isGameOver)
 	for i,v in pairs(musicJingles) do
