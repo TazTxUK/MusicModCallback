@@ -1102,16 +1102,30 @@ function MusicModCallback:PlayAngelItemPickupSound(player, collider, low) --(Ent
 		if not (player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN and not player:GetSubPlayer()) then --check for Soul of the Forgotten
 			colliderPickup = collider:ToPickup()
 			if colliderPickup then
-				if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and not colliderPickup:GetData()["choirsoundplayed"] then
-					--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL)
-					SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],1,0,false,1) --don't allow music callback on collectible pickup
-					colliderPickup:GetData()["choirsoundplayed"] = true
+				if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and colliderPickup.SubType > 0 then
+					player:GetData()["choirsoundflag"] = 5
 				end
 			end
 		end
 	end
 end
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, MusicModCallback.PlayAngelItemPickupSound, 0) --0 is normal player, i.e. not a co-op baby
+
+function MusicModCallback:ChoirSoundPickupAnimation(player, renderOffset) --(EntityPlayer, Vector)
+	local sprite = player:GetSprite()
+	local pickupanim = (sprite:IsPlaying("PickupWalkDown") or sprite:IsPlaying("PickupWalkUp") or sprite:IsPlaying("PickupWalkRight") or sprite:IsPlaying("PickupWalkLeft") or sprite:IsPlaying("Pickup"))
+	
+	if pickupanim and not player:GetData()["pickupanim"] and player:GetData()["choirsoundflag"] and player:GetData()["choirsoundflag"] > 0 then
+		--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL) --don't allow music callback on collectible pickup
+		SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],1,0,false,1)
+	end
+	
+	player:GetData()["pickupanim"] = pickupanim
+	if player:GetData()["choirsoundflag"] and player:GetData()["choirsoundflag"] > 0 then
+		player:GetData()["choirsoundflag"] = player:GetData()["choirsoundflag"] - 1
+	end
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, MusicModCallback.ChoirSoundPickupAnimation, 0) --0 is normal player, i.e. not a co-op baby
 
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	waitingforgamestjingle = true
