@@ -276,6 +276,8 @@ local doorprevvariants = {}
 local inbadstage = false
 local strangedoorstatebefore = DoorState.STATE_INIT
 local foundknifepiecebefore = false
+local devildoorspawnedbefore = false
+local angeldoorspawnedbefore = false
 
 --this table is only for the start jingles, and for unlooped tracks that, under specific circumstances, need to continue playing upon entering a new room and retain the queued track
 local musicJingles = {}
@@ -333,6 +335,14 @@ soundJingles[Music.MUSIC_JINGLE_SECRETROOM_FIND] = {
 }
 soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
 	["id"] = Isaac.GetSoundIdByName("Strange Door Jingle"),
+}
+soundJingles[Music.MUSIC_JINGLE_DEVILROOM_FIND] = {
+	["id"] = Isaac.GetSoundIdByName("Devil Room Find Jingle"),
+	["noVolumeChange"] = true,
+}
+soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND] = {
+	["id"] = Isaac.GetSoundIdByName("Holy Room Find Jingle"),
+	["noVolumeChange"] = true,
 }
 
 local stageapiexists = false
@@ -761,8 +771,10 @@ function musicPlay(track, track2)
 		--Isaac.DebugString("sfxid found to be "..tostring(sfxid))
 		if sfxid and sfxid > 0 then
 			SFXManager():Play(sfxid,1,0,false,1)
-			soundJingleTimer = 145 --roughly 3 seconds
-			soundJingleVolume = false
+			if not soundJingles[track]["noVolumeChange"] then
+				soundJingleTimer = 145 --roughly 3 seconds
+				soundJingleVolume = false
+			end
 		end
 		id = -1 --musicmgr skips track 1, plays track 2
 	end
@@ -928,11 +940,20 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		challengeactivebefore = room:IsAmbushActive()
 		challengedonebefore = room:IsAmbushDone()
 		roomclearbefore = room:IsClear()
+		devildoorspawnedbefore = false
+		angeldoorspawnedbefore = false
 		
 		for i=0,7 do
 			local door = room:GetDoor(i)
 			if door then
 				doorprevvariants[i] = door:GetVariant()
+				
+				if door.TargetRoomType == RoomType.ROOM_DEVIL then
+					devildoorspawnedbefore = true
+				end
+				if door.TargetRoomType == RoomType.ROOM_ANGEL then
+					angeldoorspawnedbefore = true
+				end
 			end
 		end
 		
@@ -1056,6 +1077,32 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.En
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.EndAngelFight, EntityType.ENTITY_GABRIEL)
 --end Angel Statue fight functions
 
+local nonChoirCollectibleRoomTypes = {
+	[RoomType.ROOM_SHOP] = true,
+	[RoomType.ROOM_TREASURE] = true,
+	[RoomType.ROOM_BOSS] = true,
+	[RoomType.ROOM_MINIBOSS] = true,
+	[RoomType.ROOM_LIBRARY] = true,
+	[RoomType.ROOM_DEVIL] = true,
+	[RoomType.ROOM_BLACK_MARKET] = true,
+}
+function MusicModCallback:PlayAngelItemPickupSound(player, collider, low) --(EntityPlayer, Entity, bool)
+	local room = Game():GetRoom()
+	local roomtype = room:GetType()
+	--many room types play the choir sound when picking up a collectible
+	if not nonChoirCollectibleRoomTypes[roomtype] then
+		colliderPickup = collider:ToPickup()
+		if colliderPickup then
+			if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and not colliderPickup:GetData()["choirsoundplayed"] then
+				--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL)
+				SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],1,0,false,1) --don't allow music callback on collectible pickup
+				colliderPickup:GetData()["choirsoundplayed"] = true
+			end
+		end
+	end
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, MusicModCallback.PlayAngelItemPickupSound, 0) --0 is normal player, i.e. not a co-op baby
+
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	waitingforgamestjingle = true
 	roomclearbefore = false
@@ -1066,6 +1113,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	satanfightstage = 0
 	strangedoorstatebefore = DoorState.STATE_INIT
 	foundknifepiecebefore = false
+	devildoorspawnedbefore = false
+	angeldoorspawnedbefore = false
 	
 	for i,v in pairs(musicJingles) do
 		v["timeleft"] = 0
@@ -1432,6 +1481,23 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 						end
 					end
 				end
+			end
+		end
+	end
+	
+	for i=0,7 do
+		local door = room:GetDoor(i)
+		if door then
+			local devildoorspawnednow = (door.TargetRoomType == RoomType.ROOM_DEVIL)
+			local angeldoorspawnednow = (door.TargetRoomType == RoomType.ROOM_ANGEL)
+			
+			if devildoorspawnednow and not devildoorspawnedbefore then
+				musicPlay(Music.MUSIC_JINGLE_DEVILROOM_FIND, Music.MUSIC_NULL)
+				devildoorspawnedbefore = devildoorspawnednow
+			end
+			if angeldoorspawnednow and not angeldoorspawnedbefore then
+				musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL)
+				angeldoorspawnedbefore = angeldoorspawnednow
 			end
 		end
 	end
