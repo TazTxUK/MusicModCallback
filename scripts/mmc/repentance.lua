@@ -1220,6 +1220,9 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	
 	--this is necessary for the music to play after Dream Catcher animations
 	if currentMusicId == Music.MUSIC_JINGLE_NIGHTMARE and Game():GetHUD():IsVisible() then
+		for i,v in pairs(musicJingles) do
+			v["timeleft"] = 0
+		end
 		musicCrossfade(getStageMusic())
 	end
 	
