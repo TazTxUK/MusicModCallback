@@ -1099,12 +1099,14 @@ function MusicModCallback:PlayAngelItemPickupSound(player, collider, low) --(Ent
 	local roomtype = room:GetType()
 	--many room types play the choir sound when picking up a collectible
 	if not nonChoirCollectibleRoomTypes[roomtype] then
-		colliderPickup = collider:ToPickup()
-		if colliderPickup then
-			if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and not colliderPickup:GetData()["choirsoundplayed"] then
-				--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL)
-				SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],1,0,false,1) --don't allow music callback on collectible pickup
-				colliderPickup:GetData()["choirsoundplayed"] = true
+		if not (player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN and not player:GetSubPlayer()) then --check for Soul of the Forgotten
+			colliderPickup = collider:ToPickup()
+			if colliderPickup then
+				if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and not colliderPickup:GetData()["choirsoundplayed"] then
+					--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL)
+					SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],1,0,false,1) --don't allow music callback on collectible pickup
+					colliderPickup:GetData()["choirsoundplayed"] = true
+				end
 			end
 		end
 	end
