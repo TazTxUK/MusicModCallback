@@ -982,8 +982,16 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 				musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] = 0
 			end
 			
+			local prevRoomType = RoomType.ROOM_NULL
+			if level.EnterDoor >= 0 then
+				local prevRoomDoor = room:GetDoor(level.EnterDoor)
+				if prevRoomDoor then
+					prevRoomType = prevRoomDoor.TargetRoomType
+				end
+			end
+			
 			--NOTE: the room:IsClear() check handles back-to-back Bosses (i.e. XL floors)
-			if (roomtype == RoomType.ROOM_SECRET_EXIT or (roomtype == RoomType.ROOM_BOSS and room:IsClear())) and (musicJingles[Music.MUSIC_JINGLE_BOSS_OVER]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3]["timeleft"] > 0) then
+			if (roomtype == RoomType.ROOM_SECRET_EXIT or (roomtype == RoomType.ROOM_BOSS and room:IsClear() and (prevRoomType == RoomType.ROOM_SECRET_EXIT or prevRoomType == RoomType.ROOM_BOSS))) and (musicJingles[Music.MUSIC_JINGLE_BOSS_OVER]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3]["timeleft"] > 0) then
 				--Isaac.DebugString("skipping crossfade for Boss Room or Secret Exit Room")
 				skipCrossfade = true
 			else
