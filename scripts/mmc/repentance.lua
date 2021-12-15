@@ -1085,6 +1085,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.En
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.EndAngelFight, EntityType.ENTITY_GABRIEL)
 --end Angel Statue fight functions
 
+--unfortunately, the Angel Room Appear jingle uses the same sound file as a commonly-used collectible pickup sound effect
+--so the following code will play that sound upon picking up a collectible in the appropriate room types
 local nonChoirCollectibleRoomTypes = {
 	[RoomType.ROOM_SHOP] = true,
 	[RoomType.ROOM_TREASURE] = true,
@@ -1100,10 +1102,15 @@ function MusicModCallback:PlayAngelItemPickupSound(player, collider, low) --(Ent
 	--many room types play the choir sound when picking up a collectible
 	if not nonChoirCollectibleRoomTypes[roomtype] then
 		if not (player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN and not player:GetSubPlayer()) then --check for Soul of the Forgotten
-			colliderPickup = collider:ToPickup()
-			if colliderPickup then
-				if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and colliderPickup.SubType > 0 then
-					player:GetData()["choirsoundflag"] = 5
+			local sprite = player:GetSprite()
+			local anim = sprite:GetAnimation()
+			local normalanim = (anim == "WalkDown" or anim == "WalkUp" or anim == "WalkRight" or anim == "WalkLeft")
+			if normalanim then
+				colliderPickup = collider:ToPickup()
+				if colliderPickup then
+					if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and colliderPickup.SubType > 0 then
+						player:GetData()["choirsoundflag"] = 5
+					end
 				end
 			end
 		end
@@ -1113,19 +1120,49 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, MusicModCallb
 
 function MusicModCallback:ChoirSoundPickupAnimation(player, renderOffset) --(EntityPlayer, Vector)
 	local sprite = player:GetSprite()
-	local pickupanim = (sprite:IsPlaying("PickupWalkDown") or sprite:IsPlaying("PickupWalkUp") or sprite:IsPlaying("PickupWalkRight") or sprite:IsPlaying("PickupWalkLeft") or sprite:IsPlaying("Pickup"))
-	
-	if pickupanim and not player:GetData()["pickupanim"] and player:GetData()["choirsoundflag"] and player:GetData()["choirsoundflag"] > 0 then
-		--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL) --don't allow music callback on collectible pickup
-		SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],1,0,false,1)
+	local anim = sprite:GetAnimation()
+	local pickupanim = (anim == "PickupWalkDown" or anim == "PickupWalkUp" or anim == "PickupWalkRight" or anim == "PickupWalkLeft" or anim == "Pickup")
+	if pickupanim and not player:GetData()["pickupanim"] then
+		if player:GetData()["choirsoundflag"] and player:GetData()["choirsoundflag"] > 0 then
+			if not player:GetData()["lockchoir"] or player:GetData()["lockchoir"] <= 0 then
+				--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL) --don't allow music callback on collectible pickup
+				SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],0.8,0,false,1)
+			end
+		end
 	end
 	
 	player:GetData()["pickupanim"] = pickupanim
 	if player:GetData()["choirsoundflag"] and player:GetData()["choirsoundflag"] > 0 then
 		player:GetData()["choirsoundflag"] = player:GetData()["choirsoundflag"] - 1
 	end
+	if player:GetData()["lockchoir"] and player:GetData()["lockchoir"] > 0 then
+		player:GetData()["lockchoir"] = player:GetData()["lockchoir"] - 1
+	end
 end
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, MusicModCallback.ChoirSoundPickupAnimation, 0) --0 is normal player, i.e. not a co-op baby
+
+function MusicModCallback:ResetChoirSoundFlag(collectibletype, rng, player, useflags, activeSlot, customVarData) --(CollectibleType, RNG, EntityPlayer, int, ActiveSlot, int)
+	player:GetData()["choirsoundflag"] = nil
+	player:GetData()["lockchoir"] = 5
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, MusicModCallback.ResetChoirSoundFlag)
+
+function MusicModCallback:EmptyPedestalChoir(collectible, renderOffset) --(EntityPickup, Vector)
+	local room = Game():GetRoom()
+	local roomtype = room:GetType()
+	
+	if not nonChoirCollectibleRoomTypes[roomtype] then
+		
+		if collectible.SubType == 0 and collectible:GetData()["prevCollectibleType"] and collectible:GetData()["prevCollectibleType"] > 0 then
+			--failsafe for using active item at the same time a passive item is picked up
+			SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],0.8,0,false,1)
+		end
+		
+		collectible:GetData()["prevCollectibleType"] = collectible.SubType
+	end
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_PICKUP_RENDER, MusicModCallback.EmptyPedestalChoir, PickupVariant.PICKUP_COLLECTIBLE)
+--end of code that handles playing the Angel Room Appear sound effect when picking up collectible items in certain room types
 
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	waitingforgamestjingle = true
