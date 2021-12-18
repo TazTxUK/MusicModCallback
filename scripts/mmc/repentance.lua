@@ -337,11 +337,11 @@ soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
 	["id"] = Isaac.GetSoundIdByName("Strange Door Jingle"),
 }
 soundJingles[Music.MUSIC_JINGLE_DEVILROOM_FIND] = {
-	["id"] = Isaac.GetSoundIdByName("Devil Room Find Jingle"),
+	["id"] = SoundEffect.SOUND_SATAN_ROOM_APPEAR,
 	["noVolumeChange"] = true,
 }
 soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND] = {
-	["id"] = Isaac.GetSoundIdByName("Holy Room Find Jingle"),
+	["id"] = SoundEffect.SOUND_CHOIR_UNLOCK,
 	["noVolumeChange"] = true,
 }
 
@@ -1085,97 +1085,6 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.En
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, MusicModCallback.EndAngelFight, EntityType.ENTITY_GABRIEL)
 --end Angel Statue fight functions
 
---unfortunately, the Angel Room Appear jingle uses the same sound file as a commonly-used collectible pickup sound effect
---so the following code will play that sound upon picking up a collectible in the appropriate room types
-local nonChoirCollectibleRoomTypes = {
-	[RoomType.ROOM_SHOP] = true,
-	[RoomType.ROOM_TREASURE] = true,
-	[RoomType.ROOM_BOSS] = true,
-	[RoomType.ROOM_MINIBOSS] = true,
-	[RoomType.ROOM_LIBRARY] = true,
-	[RoomType.ROOM_DEVIL] = true,
-	[RoomType.ROOM_BLACK_MARKET] = true,
-}
-function MusicModCallback:PlayAngelItemPickupSound(player, collider, low) --(EntityPlayer, Entity, bool)
-	local room = Game():GetRoom()
-	local roomtype = room:GetType()
-	--many room types play the choir sound when picking up a collectible
-	if not nonChoirCollectibleRoomTypes[roomtype] then
-		if not (player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN and not player:GetSubPlayer()) then --check for Soul of the Forgotten
-			local sprite = player:GetSprite()
-			local anim = sprite:GetAnimation()
-			local normalanim = (anim == "WalkDown" or anim == "WalkUp" or anim == "WalkRight" or anim == "WalkLeft")
-			if normalanim or player:GetPlayerType() == PlayerType.PLAYER_THESOUL_B then
-				colliderPickup = collider:ToPickup()
-				if colliderPickup then
-					if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and colliderPickup.SubType > 0 then
-						colliderPickup:GetData()["lastTouchedBy"] = player:GetPlayerType()
-						if player:GetPlayerType() == PlayerType.PLAYER_THESOUL_B then
-							player:GetMainTwin():GetData()["choirsoundflag"] = 5
-						else
-							player:GetData()["choirsoundflag"] = 5
-						end
-					end
-				end
-			end
-		end
-	end
-end
-MusicModCallback:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, MusicModCallback.PlayAngelItemPickupSound, 0) --0 is normal player, i.e. not a co-op baby
-
-function MusicModCallback:ChoirSoundPickupAnimation(player, renderOffset) --(EntityPlayer, Vector)
-	local sprite = player:GetSprite()
-	local anim = sprite:GetAnimation()
-	local pickupanim = (anim == "PickupWalkDown" or anim == "PickupWalkUp" or anim == "PickupWalkRight" or anim == "PickupWalkLeft" or anim == "Pickup")
-	if pickupanim and not player:GetData()["pickupanim"] then
-		if player:GetData()["choirsoundflag"] and player:GetData()["choirsoundflag"] > 0 then
-			if not player:GetData()["lockchoir"] or player:GetData()["lockchoir"] <= 0 then
-				--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL) --don't allow music callback on collectible pickup
-				SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],0.6,0,false,1)
-			end
-		end
-	end
-	
-	player:GetData()["pickupanim"] = pickupanim
-	if player:GetData()["choirsoundflag"] and player:GetData()["choirsoundflag"] > 0 then
-		player:GetData()["choirsoundflag"] = player:GetData()["choirsoundflag"] - 1
-	end
-	if player:GetData()["lockchoir"] and player:GetData()["lockchoir"] > 0 then
-		player:GetData()["lockchoir"] = player:GetData()["lockchoir"] - 1
-	end
-end
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, MusicModCallback.ChoirSoundPickupAnimation, 0) --0 is normal player, i.e. not a co-op baby
-
-function MusicModCallback:ActiveItemResetChoirSoundFlag(collectibletype, rng, player, useflags, activeSlot, customVarData) --(CollectibleType, RNG, EntityPlayer, int, ActiveSlot, int)
-	player:GetData()["choirsoundflag"] = nil
-	player:GetData()["lockchoir"] = 5
-end
-MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, MusicModCallback.ActiveItemResetChoirSoundFlag)
-
-function MusicModCallback:CardRuneResetChoirSoundFlag(card, player, useflags) --(Card, EntityPlayer, int)
-	player:GetData()["choirsoundflag"] = nil
-	player:GetData()["lockchoir"] = 5
-end
-MusicModCallback:AddCallback(ModCallbacks.MC_USE_CARD, MusicModCallback.CardRuneResetChoirSoundFlag)
-
-function MusicModCallback:EmptyPedestalChoir(collectible, renderOffset) --(EntityPickup, Vector)
-	local room = Game():GetRoom()
-	local roomtype = room:GetType()
-	
-	if not nonChoirCollectibleRoomTypes[roomtype] then
-		
-		if collectible.SubType == 0 and collectible:GetData()["prevCollectibleType"] and collectible:GetData()["prevCollectibleType"] > 0 and collectible:GetData()["lastTouchedBy"] ~= PlayerType.PLAYER_CAIN_B then
-			--failsafe for using active item, tarot card, or rune at the same time a passive item is picked up
-			--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL) --don't allow music callback on collectible pickup
-			SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],0.6,0,false,1)
-		end
-		
-		collectible:GetData()["prevCollectibleType"] = collectible.SubType
-	end
-end
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_PICKUP_RENDER, MusicModCallback.EmptyPedestalChoir, PickupVariant.PICKUP_COLLECTIBLE)
---end of code that handles playing the Angel Room Appear sound effect when picking up collectible items in certain room types
-
 MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	waitingforgamestjingle = true
 	roomclearbefore = false
@@ -1568,10 +1477,12 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			local angeldoorspawnednow = (door.TargetRoomType == RoomType.ROOM_ANGEL)
 			
 			if devildoorspawnednow and not devildoorspawnedbefore then
+				SFXManager():Stop(soundJingles[Music.MUSIC_JINGLE_DEVILROOM_FIND]["id"])
 				musicPlay(Music.MUSIC_JINGLE_DEVILROOM_FIND, Music.MUSIC_NULL)
 				devildoorspawnedbefore = devildoorspawnednow
 			end
 			if angeldoorspawnednow and not angeldoorspawnedbefore then
+				SFXManager():Stop(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"])
 				musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL)
 				angeldoorspawnedbefore = angeldoorspawnednow
 			end
