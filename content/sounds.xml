@@ -17,10 +17,4 @@
 	<sound name="Strange Door Jingle">
 		<sample weight="1" path="strange_door_jingle.wav" />
 	</sound>
-	<sound name="Devil Room Find Jingle">
-		<sample weight="1" path="devil_room_find_jingle.wav" />
-	</sound>
-	<sound name="Holy Room Find Jingle">
-		<sample weight="1" path="holy_room_find_jingle.wav" />
-	</sound>
 </sounds>
