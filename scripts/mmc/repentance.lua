@@ -1105,12 +1105,16 @@ function MusicModCallback:PlayAngelItemPickupSound(player, collider, low) --(Ent
 			local sprite = player:GetSprite()
 			local anim = sprite:GetAnimation()
 			local normalanim = (anim == "WalkDown" or anim == "WalkUp" or anim == "WalkRight" or anim == "WalkLeft")
-			if normalanim then
+			if normalanim or player:GetPlayerType() == PlayerType.PLAYER_THESOUL_B then
 				colliderPickup = collider:ToPickup()
 				if colliderPickup then
 					if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and colliderPickup.SubType > 0 then
 						colliderPickup:GetData()["lastTouchedBy"] = player:GetPlayerType()
-						player:GetData()["choirsoundflag"] = 5
+						if player:GetPlayerType() == PlayerType.PLAYER_THESOUL_B then
+							player:GetMainTwin():GetData()["choirsoundflag"] = 5
+						else
+							player:GetData()["choirsoundflag"] = 5
+						end
 					end
 				end
 			end
