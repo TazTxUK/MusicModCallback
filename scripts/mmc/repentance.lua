@@ -1109,6 +1109,7 @@ function MusicModCallback:PlayAngelItemPickupSound(player, collider, low) --(Ent
 				colliderPickup = collider:ToPickup()
 				if colliderPickup then
 					if colliderPickup.Variant == PickupVariant.PICKUP_COLLECTIBLE and colliderPickup.SubType > 0 then
+						colliderPickup:GetData()["lastTouchedBy"] = player:GetPlayerType()
 						player:GetData()["choirsoundflag"] = 5
 					end
 				end
@@ -1126,7 +1127,7 @@ function MusicModCallback:ChoirSoundPickupAnimation(player, renderOffset) --(Ent
 		if player:GetData()["choirsoundflag"] and player:GetData()["choirsoundflag"] > 0 then
 			if not player:GetData()["lockchoir"] or player:GetData()["lockchoir"] <= 0 then
 				--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL) --don't allow music callback on collectible pickup
-				SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],0.8,0,false,1)
+				SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],0.6,0,false,1)
 			end
 		end
 	end
@@ -1141,11 +1142,17 @@ function MusicModCallback:ChoirSoundPickupAnimation(player, renderOffset) --(Ent
 end
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, MusicModCallback.ChoirSoundPickupAnimation, 0) --0 is normal player, i.e. not a co-op baby
 
-function MusicModCallback:ResetChoirSoundFlag(collectibletype, rng, player, useflags, activeSlot, customVarData) --(CollectibleType, RNG, EntityPlayer, int, ActiveSlot, int)
+function MusicModCallback:ActiveItemResetChoirSoundFlag(collectibletype, rng, player, useflags, activeSlot, customVarData) --(CollectibleType, RNG, EntityPlayer, int, ActiveSlot, int)
 	player:GetData()["choirsoundflag"] = nil
 	player:GetData()["lockchoir"] = 5
 end
-MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, MusicModCallback.ResetChoirSoundFlag)
+MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, MusicModCallback.ActiveItemResetChoirSoundFlag)
+
+function MusicModCallback:CardRuneResetChoirSoundFlag(card, player, useflags) --(Card, EntityPlayer, int)
+	player:GetData()["choirsoundflag"] = nil
+	player:GetData()["lockchoir"] = 5
+end
+MusicModCallback:AddCallback(ModCallbacks.MC_USE_CARD, MusicModCallback.CardRuneResetChoirSoundFlag)
 
 function MusicModCallback:EmptyPedestalChoir(collectible, renderOffset) --(EntityPickup, Vector)
 	local room = Game():GetRoom()
@@ -1153,9 +1160,10 @@ function MusicModCallback:EmptyPedestalChoir(collectible, renderOffset) --(Entit
 	
 	if not nonChoirCollectibleRoomTypes[roomtype] then
 		
-		if collectible.SubType == 0 and collectible:GetData()["prevCollectibleType"] and collectible:GetData()["prevCollectibleType"] > 0 then
-			--failsafe for using active item at the same time a passive item is picked up
-			SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],0.8,0,false,1)
+		if collectible.SubType == 0 and collectible:GetData()["prevCollectibleType"] and collectible:GetData()["prevCollectibleType"] > 0 and collectible:GetData()["lastTouchedBy"] ~= PlayerType.PLAYER_CAIN_B then
+			--failsafe for using active item, tarot card, or rune at the same time a passive item is picked up
+			--musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL) --don't allow music callback on collectible pickup
+			SFXManager():Play(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"],0.6,0,false,1)
 		end
 		
 		collectible:GetData()["prevCollectibleType"] = collectible.SubType
