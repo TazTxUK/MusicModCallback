@@ -535,8 +535,9 @@ local function getMusicTrack()
 	local roomidx = level:GetCurrentRoomIndex()
 	local ascent = level:IsAscent()
 	local inrepstage = stagetype == StageType.STAGETYPE_REPENTANCE or stagetype == StageType.STAGETYPE_REPENTANCE_B
+	local curseoflabyrinth = (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH
 	
-	if room:IsMirrorWorld() and stage == LevelStage.STAGE1_2 and inrepstage then
+	if room:IsMirrorWorld() and (stage == LevelStage.STAGE1_2 or (stage == LevelStage.STAGE1_1 and curseoflabyrinth)) and inrepstage then
 		if roomtype ~= RoomType.ROOM_BOSS then
 			local stage_type = level:GetStageType()
 			if stage_type == StageType.STAGETYPE_REPENTANCE then
@@ -545,7 +546,7 @@ local function getMusicTrack()
 				return Music.MUSIC_DROSS_REVERSE
 			end
 		end
-	elseif room:HasCurseMist() and stage == LevelStage.STAGE2_2 and inrepstage then
+	elseif room:HasCurseMist() and (stage == LevelStage.STAGE2_2 or (stage == LevelStage.STAGE2_1 and curseoflabyrinth)) and inrepstage then
 		if level:GetStateFlag(LevelStateFlag.STATE_MINESHAFT_ESCAPE) then --this flag doesn't seem to be set until leaving the room after Mom's Shadow spawns
 			return Music.MUSIC_MINESHAFT_ESCAPE
 		else
@@ -575,7 +576,7 @@ local function getMusicTrack()
 		return getStageMusic()
 	elseif roomtype == RoomType.ROOM_BOSS then
 		if room:IsClear() then
-			if inrepstage and stage == LevelStage.STAGE3_2 then
+			if inrepstage and (stage == LevelStage.STAGE3_2 or (stage == LevelStage.STAGE3_1 and curseoflabyrinth)) then
 				if game:GetStateFlag(GameStateFlag.STATE_MAUSOLEUM_HEART_KILLED) then
 					if room:GetBossID() == 8 then
 						return Music.MUSIC_NULL --No music plays here
@@ -932,6 +933,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		local roomtype = room:GetType()
 		local level = Game():GetLevel()
 		local ascent = level:IsAscent()
+		local curseoflabyrinth = (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH
 		
 		previousgreedwave = 0
 		previousbosscount = 0
@@ -958,7 +960,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		end
 		
 		--initialize MINES/ASHPIT II RAIL BUTTONS upon discovery
-		if not modSaveData["railcomplete"] and level:GetStage() == LevelStage.STAGE2_2 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+		if not modSaveData["railcomplete"] and (level:GetStage() == LevelStage.STAGE2_2 or (level:GetStage() == LevelStage.STAGE2_1 and curseoflabyrinth)) and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
 			for i = 1, room:GetGridSize() do
 				local gridentity = room:GetGridEntity(i)
 				if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
@@ -1135,6 +1137,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	local roomdesc = Game():GetLevel():GetCurrentRoomDesc()
 	local currentMusicId = musicmgr:GetCurrentMusicID()
 	local ispaused = Game():IsPaused()
+	local curseoflabyrinth = (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH
 	
 	for i,v in pairs(musicJingles) do
 		if v["timeleft"] > 0 then
@@ -1350,7 +1353,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			if currentbosscount == 0 and previousbosscount > 0 then
-				if level:GetStage() == LevelStage.STAGE3_2 and room:GetBossID() == 8 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+				if (level:GetStage() == LevelStage.STAGE3_2 or (level:GetStage() == LevelStage.STAGE3_1 and curseoflabyrinth)) and room:GetBossID() == 8 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
 					musicCrossfade(Music.MUSIC_NULL)
 				else
 					musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
@@ -1358,7 +1361,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			previousbosscount = currentbosscount
-		elseif (level:GetStage() == LevelStage.STAGE3_2 or (level:GetStage() == LevelStage.STAGE3_1 and (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH)) and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
+		elseif (level:GetStage() == LevelStage.STAGE3_2 or (level:GetStage() == LevelStage.STAGE3_1 and curseoflabyrinth)) and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
 			local topDoor = room:GetDoor(DoorSlot.UP0)
 			if topDoor and topDoor.TargetRoomType == RoomType.ROOM_SECRET_EXIT then
 				local strangedoorstatenow = topDoor.State
@@ -1418,7 +1421,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	end
 	
 	--MINES/ASHPIT II RAIL BUTTONS
-	if not modSaveData["railcomplete"] and level:GetStage() == LevelStage.STAGE2_2 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+	if not modSaveData["railcomplete"] and (level:GetStage() == LevelStage.STAGE2_2 or (level:GetStage() == LevelStage.STAGE2_1 and curseoflabyrinth)) and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
 		for i = 1, room:GetGridSize() do
 			local gridentity = room:GetGridEntity(i)
 			if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
