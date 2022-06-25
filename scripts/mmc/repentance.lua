@@ -278,6 +278,7 @@ local strangedoorstatebefore = DoorState.STATE_INIT
 local foundknifepiecebefore = false
 local devildoorspawnedbefore = false
 local angeldoorspawnedbefore = false
+local dogmadeathjingledelay = 0
 
 --this table is only for the start jingles, and for unlooped tracks that, under specific circumstances, need to continue playing upon entering a new room and retain the queued track
 local musicJingles = {}
@@ -1045,19 +1046,26 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent)
 	end
 end, EntityType.ENTITY_ISAAC)
 
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
-	modSaveData["darkhome"] = 5
-end, EntityType.ENTITY_DOGMA)
+--[[MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
+    modSaveData["darkhome"] = 5
+end, EntityType.ENTITY_DOGMA)]]
 
 function MusicModCallback:PlayDogmaOutro(entity)
-	local sprite = entity:GetSprite()
-	local anim = sprite:GetAnimation()
-	if anim == "Death" then
-		local frame = sprite:GetFrame()
-		if frame == 80 then
-			musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER)
-		end
-	end
+    if entity.Variant ~= 1 and entity:IsDead() then
+        modSaveData["darkhome"] = 5
+    end
+    --for whatever reason the NPC death doesn't trigger for dogma and
+    --this function stops running the same frame dogma starts the death
+    --animation so I moved the death jingle to post_render
+    
+    --[[local sprite = entity:GetSprite()
+    local anim = sprite:GetAnimation()
+    if anim == "Death" then
+        local frame = sprite:GetFrame()
+        if frame == 80 then
+            musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER)
+        end
+    end]]
 end
 MusicModCallback:AddCallback(ModCallbacks.MC_NPC_UPDATE, MusicModCallback.PlayDogmaOutro, EntityType.ENTITY_DOGMA)
 
@@ -1418,6 +1426,16 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			modSaveData["darkhome"] = 4
 		end
 		--darkhome is set to 5 after killing Dogma
+		--PLAY DOGMA DEATH JINGLE
+		if modSaveData["darkhome"] == 5 then
+		    dogmadeathjingledelay = dogmadeathjingledelay - 1
+		    if dogmadeathjingledelay == 0 then
+			musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER)
+			modSaveData["darkhome"] = 6
+		    end
+		else
+		    dogmadeathjingledelay = 170
+		end
 	end
 	
 	--MINES/ASHPIT II RAIL BUTTONS
