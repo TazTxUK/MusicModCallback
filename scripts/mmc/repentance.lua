@@ -220,6 +220,36 @@ chapter_music_greed[LevelStage.STAGE6_GREED] = {
 
 chapter_music_greed[LevelStage.STAGE7_GREED] = chapter_music_greed[LevelStage.STAGE6_GREED]
 
+local random_music = { --this is for the "DELETE THIS" challenge
+	[0] = Music.MUSIC_BASEMENT,
+	[1] = Music.MUSIC_CELLAR,
+	[2] = Music.MUSIC_BURNING_BASEMENT,
+	[3] = Music.MUSIC_DOWNPOUR,
+	[4] = Music.MUSIC_DROSS,
+	[5] = Music.MUSIC_CAVES,
+	[6] = Music.MUSIC_CATACOMBS,
+	[7] = Music.MUSIC_FLOODED_CAVES,
+	[8] = Music.MUSIC_MINES,
+	[9] = Music.MUSIC_ASHPIT,
+	[10] = Music.MUSIC_DEPTHS,
+	[11] = Music.MUSIC_NECROPOLIS,
+	[12] = Music.MUSIC_DANK_DEPTHS,
+	[13] = Music.MUSIC_MAUSOLEUM,
+	[14] = Music.MUSIC_GEHENNA,
+	[15] = Music.MUSIC_WOMB_UTERO,
+	[16] = Music.MUSIC_UTERO,
+	[17] = Music.MUSIC_SCARRED_WOMB,
+	[18] = Music.MUSIC_CORPSE,
+	[19] = Music.MUSIC_BLUE_WOMB,
+	[20] = Music.MUSIC_SHEOL,
+	[21] = Music.MUSIC_CATHEDRAL,
+	[22] = Music.MUSIC_DARK_ROOM,
+	[23] = Music.MUSIC_CHEST,
+	[24] = Music.MUSIC_VOID,
+	--Music.MUSIC_MORTIS
+}
+local random_music_size = 25
+
 local function correctedTrackNum(n)
 	if redirectmusicenum[n] then
 		return redirectmusicenum[n]
@@ -246,6 +276,9 @@ local doorprevvariants = {}
 local inbadstage = false
 local strangedoorstatebefore = DoorState.STATE_INIT
 local foundknifepiecebefore = false
+local devildoorspawnedbefore = false
+local angeldoorspawnedbefore = false
+local dogmadeathjingledelay = 0
 
 --this table is only for the start jingles, and for unlooped tracks that, under specific circumstances, need to continue playing upon entering a new room and retain the queued track
 local musicJingles = {}
@@ -304,6 +337,14 @@ soundJingles[Music.MUSIC_JINGLE_SECRETROOM_FIND] = {
 soundJingles[Music.MUSIC_STRANGE_DOOR_JINGLE] = {
 	["id"] = Isaac.GetSoundIdByName("Strange Door Jingle"),
 }
+soundJingles[Music.MUSIC_JINGLE_DEVILROOM_FIND] = {
+	["id"] = SoundEffect.SOUND_SATAN_ROOM_APPEAR,
+	["noVolumeChange"] = true,
+}
+soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND] = {
+	["id"] = SoundEffect.SOUND_CHOIR_UNLOCK,
+	["noVolumeChange"] = true,
+}
 
 local stageapiexists = false
 
@@ -347,10 +388,6 @@ setmetatable(weakmusicmgr, weakmusicmgrfuncs)
 setmetatable(weakmusicmgrfuncs, overridemusicmgrfuncs)
 
 function MMC.ResetSave()
-	modSaveData["inmirrorroom"] = false
-	modSaveData["inmirroredworld"] = false
-	modSaveData["inmineroom"] = false
-	modSaveData["inmineshaft"] = false
 	modSaveData["railcomplete"] = false
 	modSaveData["deathcertificateroom"] = false
 	modSaveData["darkhome"] = 0
@@ -385,6 +422,10 @@ local function getChapterMusic(floor_type, floor_variant, greed)
 	return chapter[floor_variant] or chapter[StageType.STAGETYPE_ORIGINAL] or Music.MUSIC_TITLE_REPENTANCE
 end
 
+local function getRandomStageMusic(seed)
+	return random_music[(seed % random_music_size)]
+end
+
 --check for death certificate
 MusicModCallback:AddCallback(ModCallbacks.MC_USE_ITEM, function()
 	modSaveData["deathcertificateroom"] = true
@@ -395,6 +436,14 @@ local function getStageMusic()
 	local level = game:GetLevel()
 	local stage = level:GetStage()
 	local stage_type = level:GetStageType()
+	
+	--play random music for "DELETE THIS" challenge
+	if Isaac.GetChallenge() == Challenge.CHALLENGE_DELETE_THIS then
+		local seeds = game:GetSeeds()
+		local stageseed = seeds:GetStageSeed(stage)
+		return getRandomStageMusic(stageseed)
+	end
+	
 	--death certificate check
 	if modSaveData["deathcertificateroom"] then
 		local backdrop = Game():GetRoom():GetBackdropType()
@@ -485,10 +534,11 @@ local function getMusicTrack()
 	local stage = level:GetStage()
 	local stagetype = level:GetStageType()
 	local roomidx = level:GetCurrentRoomIndex()
-	local ascent = game:GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and stage <= 6
+	local ascent = level:IsAscent()
 	local inrepstage = stagetype == StageType.STAGETYPE_REPENTANCE or stagetype == StageType.STAGETYPE_REPENTANCE_B
+	local curseoflabyrinth = (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH
 	
-	if modSaveData["inmirroredworld"] and stage == LevelStage.STAGE1_2 and inrepstage then
+	if room:IsMirrorWorld() and (stage == LevelStage.STAGE1_2 or (stage == LevelStage.STAGE1_1 and curseoflabyrinth)) and inrepstage then
 		if roomtype ~= RoomType.ROOM_BOSS then
 			local stage_type = level:GetStageType()
 			if stage_type == StageType.STAGETYPE_REPENTANCE then
@@ -497,7 +547,7 @@ local function getMusicTrack()
 				return Music.MUSIC_DROSS_REVERSE
 			end
 		end
-	elseif modSaveData["inmineshaft"] and stage == LevelStage.STAGE2_2 and inrepstage then
+	elseif room:HasCurseMist() and (stage == LevelStage.STAGE2_2 or (stage == LevelStage.STAGE2_1 and curseoflabyrinth)) and inrepstage then
 		if level:GetStateFlag(LevelStateFlag.STATE_MINESHAFT_ESCAPE) then --this flag doesn't seem to be set until leaving the room after Mom's Shadow spawns
 			return Music.MUSIC_MINESHAFT_ESCAPE
 		else
@@ -527,7 +577,7 @@ local function getMusicTrack()
 		return getStageMusic()
 	elseif roomtype == RoomType.ROOM_BOSS then
 		if room:IsClear() then
-			if inrepstage and stage == LevelStage.STAGE3_2 then
+			if inrepstage and (stage == LevelStage.STAGE3_2 or (stage == LevelStage.STAGE3_1 and curseoflabyrinth)) then
 				if game:GetStateFlag(GameStateFlag.STATE_MAUSOLEUM_HEART_KILLED) then
 					if room:GetBossID() == 8 then
 						return Music.MUSIC_NULL --No music plays here
@@ -576,7 +626,7 @@ local function getMusicTrack()
 		return Music.MUSIC_PLANETARIUM
 	elseif roomtype == RoomType.ROOM_ULTRASECRET then
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
-	elseif roomtype == (RoomType.ROOM_SECRET_EXIT or 27) then --RoomType.ROOM_SECRET_EXIT is not currently defined in enums.lua
+	elseif roomtype == RoomType.ROOM_SECRET_EXIT then
 		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
 	elseif roomtype == RoomType.ROOM_DUNGEON and stage == LevelStage.STAGE8 and roomidx == -10 then
 		return Music.MUSIC_BEAST_BOSS
@@ -653,7 +703,7 @@ function musicCrossfade(track, track2)
 	if id2 then replacedtrack2 = true end
 	id2 = id2 or track2
 	local faderate = 0.08 --0.08 is default in MusicManager.Crossfade
-	if modSaveData["inmirrorroom"] and mirrorSoundIsPlaying() and Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE then faderate = 0.01 end
+	if mirrorSoundIsPlaying() and Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE then faderate = 0.01 end
 	if not id then
 		return
 	elseif id > 0 then
@@ -723,8 +773,10 @@ function musicPlay(track, track2)
 		--Isaac.DebugString("sfxid found to be "..tostring(sfxid))
 		if sfxid and sfxid > 0 then
 			SFXManager():Play(sfxid,1,0,false,1)
-			soundJingleTimer = 145 --roughly 3 seconds
-			soundJingleVolume = false
+			if not soundJingles[track]["noVolumeChange"] then
+				soundJingleTimer = 145 --roughly 3 seconds
+				soundJingleVolume = false
+			end
 		end
 		id = -1 --musicmgr skips track 1, plays track 2
 	end
@@ -829,6 +881,24 @@ function MusicModCallback:UpdateSaveValuesForNewFloor()
 	MMC.ResetSave()
 end
 
+function MusicModCallback:InitializeMusicJingles(isContinued) --this function kicks off the Game Start Jingle countdown
+	local currentMusicId = musicmgr:GetCurrentMusicID()
+	if currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT then
+		musicJingles[currentMusicId]["timeleft"] = musicJingles[currentMusicId]["length"]
+		
+		local room = Game():GetRoom()
+		if Isaac.GetChallenge() == Challenge.CHALLENGE_DELETE_THIS and not isContinued then
+			musicJingles[currentMusicId]["nexttrack"] = -1 --fadeout
+		elseif room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
+			musicJingles[currentMusicId]["nexttrack"] = nil
+		else
+			waitingforgamestjingle = false --trick getMusicTrack into giving us the track early
+			musicJingles[currentMusicId]["nexttrack"] = getMusicTrack()
+			waitingforgamestjingle = true --Cyber: "This may not be good code, but I don't want to interfere with the check that Nato added to the beginning of getMusicTrack because I figure it is important for the Soundtrack Menu."
+		end
+	end
+end
+
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, MusicModCallback.UpdateSaveValuesForNewFloor)
 
@@ -846,22 +916,7 @@ end)
 
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.StageAPIcheck)
 MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.LoadSaveData)
-
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function() --this function kicks off the Game Start Jingle countdown
-	local currentMusicId = musicmgr:GetCurrentMusicID()
-	if currentMusicId == Music.MUSIC_JINGLE_GAME_START or currentMusicId == Music.MUSIC_JINGLE_GAME_START_ALT then
-		musicJingles[currentMusicId]["timeleft"] = musicJingles[currentMusicId]["length"]
-		
-		local room = Game():GetRoom()
-		if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
-			musicJingles[currentMusicId]["nexttrack"] = getBossMusic()
-		else
-			waitingforgamestjingle = false --trick getMusicTrack into giving us the track early
-			musicJingles[currentMusicId]["nexttrack"] = getMusicTrack()
-			waitingforgamestjingle = true --Cyber: "This may not be good code, but I don't want to interfere with the check that Nato added to the beginning of getMusicTrack because I figure it is important for the Soundtrack Menu."
-		end
-	end
-end)
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, MusicModCallback.InitializeMusicJingles)
 
 function MusicModCallback:PlayGameOverMusic(isGameOver)
 	for i,v in pairs(musicJingles) do
@@ -878,13 +933,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		local room = Game():GetRoom()
 		local roomtype = room:GetType()
 		local level = Game():GetLevel()
-		local ascent = Game():GetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH) and level:GetStage() <= 6
-		
-		local previousinmirrorroom = modSaveData["inmirrorroom"]
-		modSaveData["inmirrorroom"] = false
-		
-		local previousinmineroom = modSaveData["inmineroom"]
-		modSaveData["inmineroom"] = false
+		local ascent = level:IsAscent()
+		local curseoflabyrinth = (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH
 		
 		previousgreedwave = 0
 		previousbosscount = 0
@@ -893,22 +943,25 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		challengeactivebefore = room:IsAmbushActive()
 		challengedonebefore = room:IsAmbushDone()
 		roomclearbefore = room:IsClear()
+		devildoorspawnedbefore = false
+		angeldoorspawnedbefore = false
 		
 		for i=0,7 do
 			local door = room:GetDoor(i)
 			if door then
 				doorprevvariants[i] = door:GetVariant()
 				
-				if door.TargetRoomIndex == -100 then --the Mirror
-					modSaveData["inmirrorroom"] = true
-				elseif door.TargetRoomIndex == -101 then --the door to the Mineshaft
-					modSaveData["inmineroom"] = true
+				if door.TargetRoomType == RoomType.ROOM_DEVIL then
+					devildoorspawnedbefore = true
+				end
+				if door.TargetRoomType == RoomType.ROOM_ANGEL then
+					angeldoorspawnedbefore = true
 				end
 			end
 		end
 		
 		--initialize MINES/ASHPIT II RAIL BUTTONS upon discovery
-		if not modSaveData["railcomplete"] and level:GetStage() == LevelStage.STAGE2_2 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+		if not modSaveData["railcomplete"] and (level:GetStage() == LevelStage.STAGE2_2 or (level:GetStage() == LevelStage.STAGE2_1 and curseoflabyrinth)) and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
 			for i = 1, room:GetGridSize() do
 				local gridentity = room:GetGridEntity(i)
 				if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
@@ -922,28 +975,26 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 			end
 		end
 		
-		if previousinmirrorroom and modSaveData["inmirrorroom"] then
-			--this isn't ideal, but I can't find a GameStateFlag or something similar for being in the mirrored world
-			if mirrorSoundIsPlaying() then
-				modSaveData["inmirroredworld"] = (not modSaveData["inmirroredworld"])
-			end
-		elseif previousinmineroom and modSaveData["inmineroom"] then
-			--I'm concerned that a teleporting item or the D7 (restart room) could trigger this
-			modSaveData["inmineshaft"] = (not modSaveData["inmineshaft"])
-		end
-		
 		if not waitingforgamestjingle then
 			--if we need to, we can stop music from playing in a new room
 			local skipCrossfade = false
 			
-			if modSaveData["inmineshaft"] and musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] > 0 then
+			if room:HasCurseMist() and musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] > 0 then
 				skipCrossfade = true
 			else
 				musicJingles[Music.MUSIC_MOTHERS_SHADOW_INTRO]["timeleft"] = 0
 			end
 			
+			local prevRoomType = RoomType.ROOM_NULL
+			if level.EnterDoor >= 0 then
+				local prevRoomDoor = room:GetDoor(level.EnterDoor)
+				if prevRoomDoor then
+					prevRoomType = prevRoomDoor.TargetRoomType
+				end
+			end
+			
 			--NOTE: the room:IsClear() check handles back-to-back Bosses (i.e. XL floors)
-			if (roomtype == (RoomType.ROOM_SECRET_EXIT or 27) or (roomtype == RoomType.ROOM_BOSS and room:IsClear())) and (musicJingles[Music.MUSIC_JINGLE_BOSS_OVER]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3]["timeleft"] > 0) then
+			if (roomtype == RoomType.ROOM_SECRET_EXIT or (roomtype == RoomType.ROOM_BOSS and room:IsClear() and (prevRoomType == RoomType.ROOM_SECRET_EXIT or prevRoomType == RoomType.ROOM_BOSS))) and (musicJingles[Music.MUSIC_JINGLE_BOSS_OVER]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER2]["timeleft"] > 0 or musicJingles[Music.MUSIC_JINGLE_BOSS_OVER3]["timeleft"] > 0) then
 				--Isaac.DebugString("skipping crossfade for Boss Room or Secret Exit Room")
 				skipCrossfade = true
 			else
@@ -972,7 +1023,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		--NOTE: moved treasure/sound jingle initalization to musicPlay
 		
 		--moved from getMusicTrack to here so we can use musicPlay instead of musicCrossfade
-		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) and not modSaveData["inmirroredworld"] and not ascent then
+		if room:GetType() == RoomType.ROOM_TREASURE and room:IsFirstVisit() and (Game():IsGreedMode() or level:GetStage() ~= LevelStage.STAGE4_3) and not room:IsMirrorWorld() and not ascent then
 			local rng = math.random(0,3)
 			local treasurejingle
 			if rng == 0 then
@@ -995,19 +1046,26 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent)
 	end
 end, EntityType.ENTITY_ISAAC)
 
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
-	modSaveData["darkhome"] = 5
-end, EntityType.ENTITY_DOGMA)
+--[[MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
+    modSaveData["darkhome"] = 5
+end, EntityType.ENTITY_DOGMA)]]
 
 function MusicModCallback:PlayDogmaOutro(entity)
-	local sprite = entity:GetSprite()
-	local anim = sprite:GetAnimation()
-	if anim == "Death" then
-		local frame = sprite:GetFrame()
-		if frame == 80 then
-			musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER)
-		end
-	end
+    if entity.Variant ~= 1 and entity:IsDead() then
+        modSaveData["darkhome"] = 5
+    end
+    --for whatever reason the NPC death doesn't trigger for dogma and
+    --this function stops running the same frame dogma starts the death
+    --animation so I moved the death jingle to post_render
+    
+    --[[local sprite = entity:GetSprite()
+    local anim = sprite:GetAnimation()
+    if anim == "Death" then
+        local frame = sprite:GetFrame()
+        if frame == 80 then
+            musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER)
+        end
+    end]]
 end
 MusicModCallback:AddCallback(ModCallbacks.MC_NPC_UPDATE, MusicModCallback.PlayDogmaOutro, EntityType.ENTITY_DOGMA)
 
@@ -1047,6 +1105,8 @@ MusicModCallback:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, function()
 	satanfightstage = 0
 	strangedoorstatebefore = DoorState.STATE_INIT
 	foundknifepiecebefore = false
+	devildoorspawnedbefore = false
+	angeldoorspawnedbefore = false
 	
 	for i,v in pairs(musicJingles) do
 		v["timeleft"] = 0
@@ -1085,6 +1145,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	local roomdesc = Game():GetLevel():GetCurrentRoomDesc()
 	local currentMusicId = musicmgr:GetCurrentMusicID()
 	local ispaused = Game():IsPaused()
+	local curseoflabyrinth = (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH
 	
 	for i,v in pairs(musicJingles) do
 		if v["timeleft"] > 0 then
@@ -1097,10 +1158,9 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				if v["nexttrack"] then
 					--Isaac.DebugString("nexttrack found to be "..tostring(v["nexttrack"]))
 					musicCrossfade(v["nexttrack"])
+					v["nexttrack"] = nil
 				else --failsafe for game start jingles, but nexttrack should be set for those, too
-					if room:GetType() == RoomType.ROOM_BOSS and not room:IsClear() then
-						musicCrossfade(getBossMusic())
-					else
+					if room:GetType() ~= RoomType.ROOM_BOSS or room:IsClear() then
 						musicCrossfade(getMusicTrack())
 					end
 				end
@@ -1143,6 +1203,9 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	
 	--this is necessary for the music to play after Dream Catcher animations
 	if currentMusicId == Music.MUSIC_JINGLE_NIGHTMARE and Game():GetHUD():IsVisible() then
+		for i,v in pairs(musicJingles) do
+			v["timeleft"] = 0
+		end
 		musicCrossfade(getStageMusic())
 	end
 	
@@ -1298,7 +1361,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			if currentbosscount == 0 and previousbosscount > 0 then
-				if level:GetStage() == LevelStage.STAGE3_2 and room:GetBossID() == 8 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+				if (level:GetStage() == LevelStage.STAGE3_2 or (level:GetStage() == LevelStage.STAGE3_1 and curseoflabyrinth)) and room:GetBossID() == 8 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
 					musicCrossfade(Music.MUSIC_NULL)
 				else
 					musicCrossfade(getGenericBossDeathJingle(), Music.MUSIC_BOSS_OVER)
@@ -1306,9 +1369,9 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			end
 			
 			previousbosscount = currentbosscount
-		elseif (level:GetStage() == LevelStage.STAGE3_2 or (level:GetStage() == LevelStage.STAGE3_1 and (level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH) == LevelCurse.CURSE_OF_LABYRINTH)) and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
+		elseif (level:GetStage() == LevelStage.STAGE3_2 or (level:GetStage() == LevelStage.STAGE3_1 and curseoflabyrinth)) and level:GetStageType() < StageType.STAGETYPE_REPENTANCE then
 			local topDoor = room:GetDoor(DoorSlot.UP0)
-			if topDoor and topDoor.TargetRoomType == (RoomType.ROOM_SECRET_EXIT or 27) then
+			if topDoor and topDoor.TargetRoomType == RoomType.ROOM_SECRET_EXIT then
 				local strangedoorstatenow = topDoor.State
 				
 				if strangedoorstatebefore == DoorState.STATE_CLOSED and strangedoorstatenow == DoorState.STATE_OPEN then
@@ -1317,7 +1380,7 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				
 				strangedoorstatebefore = strangedoorstatenow
 			end
-		elseif modSaveData["inmineshaft"] then
+		elseif room:HasCurseMist() then
 			local foundknifepiecenow
 			
 			local knifetable = Isaac.FindByType(EntityType.ENTITY_PICKUP,PickupVariant.PICKUP_COLLECTIBLE,CollectibleType.COLLECTIBLE_KNIFE_PIECE_2)
@@ -1363,10 +1426,20 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 			modSaveData["darkhome"] = 4
 		end
 		--darkhome is set to 5 after killing Dogma
+		--PLAY DOGMA DEATH JINGLE
+		if modSaveData["darkhome"] == 5 then
+		    dogmadeathjingledelay = dogmadeathjingledelay - 1
+		    if dogmadeathjingledelay == 0 then
+			musicPlay(Music.MUSIC_JINGLE_DOGMA_OVER)
+			modSaveData["darkhome"] = 6
+		    end
+		else
+		    dogmadeathjingledelay = 170
+		end
 	end
 	
 	--MINES/ASHPIT II RAIL BUTTONS
-	if not modSaveData["railcomplete"] and level:GetStage() == LevelStage.STAGE2_2 and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
+	if not modSaveData["railcomplete"] and (level:GetStage() == LevelStage.STAGE2_2 or (level:GetStage() == LevelStage.STAGE2_1 and curseoflabyrinth)) and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
 		for i = 1, room:GetGridSize() do
 			local gridentity = room:GetGridEntity(i)
 			if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
@@ -1414,6 +1487,25 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 						end
 					end
 				end
+			end
+		end
+	end
+	
+	for i=0,7 do
+		local door = room:GetDoor(i)
+		if door then
+			local devildoorspawnednow = (door.TargetRoomType == RoomType.ROOM_DEVIL)
+			local angeldoorspawnednow = (door.TargetRoomType == RoomType.ROOM_ANGEL)
+			
+			if devildoorspawnednow and not devildoorspawnedbefore then
+				SFXManager():Stop(soundJingles[Music.MUSIC_JINGLE_DEVILROOM_FIND]["id"])
+				musicPlay(Music.MUSIC_JINGLE_DEVILROOM_FIND, Music.MUSIC_NULL)
+				devildoorspawnedbefore = devildoorspawnednow
+			end
+			if angeldoorspawnednow and not angeldoorspawnedbefore then
+				SFXManager():Stop(soundJingles[Music.MUSIC_JINGLE_HOLYROOM_FIND]["id"])
+				musicPlay(Music.MUSIC_JINGLE_HOLYROOM_FIND, Music.MUSIC_NULL)
+				angeldoorspawnedbefore = angeldoorspawnednow
 			end
 		end
 	end
