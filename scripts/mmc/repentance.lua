@@ -460,11 +460,12 @@ local function getGenericBossMusic()
 	local game = Game()
 	local level = game:GetLevel()
 	local stage_type = level:GetStageType()
-	local room = game:GetRoom()
 	if stage_type == StageType.STAGETYPE_REPENTANCE or stage_type == StageType.STAGETYPE_REPENTANCE_B then
 		return Music.MUSIC_BOSS3
 	else
-		if room:GetDecorationSeed() % 2 == 0 then
+		local roomdesc = level:GetCurrentRoomDesc()
+		local roomdescflags = roomdesc.Flags
+		if (roomdescflags & RoomDescriptor.FLAG_ALT_BOSS_MUSIC) == 0 then
 			return Music.MUSIC_BOSS
 		else
 			return Music.MUSIC_BOSS2
@@ -476,11 +477,12 @@ local function getGenericBossDeathJingle()
 	local game = Game()
 	local level = game:GetLevel()
 	local stage_type = level:GetStageType()
-	local room = game:GetRoom()
 	if stage_type == StageType.STAGETYPE_REPENTANCE or stage_type == StageType.STAGETYPE_REPENTANCE_B then
 		return Music.MUSIC_JINGLE_BOSS_OVER3
 	else
-		if room:GetDecorationSeed() % 2 == 0 then
+		local roomdesc = level:GetCurrentRoomDesc()
+		local roomdescflags = roomdesc.Flags
+		if (roomdescflags & RoomDescriptor.FLAG_ALT_BOSS_MUSIC) == 0 then
 			return Music.MUSIC_JINGLE_BOSS_OVER
 		else
 			return Music.MUSIC_JINGLE_BOSS_OVER2
@@ -542,9 +544,9 @@ local function getMusicTrack()
 		if roomtype ~= RoomType.ROOM_BOSS then
 			local stage_type = level:GetStageType()
 			if stage_type == StageType.STAGETYPE_REPENTANCE then
-				return Music.MUSIC_DOWNPOUR_REVERSE --in vanilla, the reversed track is slowly faded in on top of the normal track (this is a low priority stretch goal)
+				return Music.MUSIC_DOWNPOUR_REVERSE --in vanilla, the reversed track for Downpour is slowly faded in on top of the normal track
 			elseif stage_type == StageType.STAGETYPE_REPENTANCE_B then
-				return Music.MUSIC_DROSS_REVERSE
+				return Music.MUSIC_DROSS_REVERSE --but strangely, reversed Dross plays immediately
 			end
 		end
 	elseif room:HasCurseMist() and (stage == LevelStage.STAGE2_2 or (stage == LevelStage.STAGE2_1 and curseoflabyrinth)) and inrepstage then
@@ -559,6 +561,8 @@ local function getMusicTrack()
 	
 	if ascent then
 		return Music.MUSIC_REVERSE_GENESIS
+	elseif game:GetStateFlag(GameStateFlag.STATE_MAUSOLEUM_HEART_KILLED) and (stage == LevelStage.STAGE3_2 or (stage == LevelStage.STAGE3_1 and curseoflabyrinth)) and inrepstage and not (roomtype == RoomType.ROOM_BOSS and room:GetBossID() == 8) then
+		return Music.MUSIC_BOSS_OVER_TWISTED
 	elseif roomtype == RoomType.ROOM_MINIBOSS or roomdesc.SurpriseMiniboss then
 		if room:IsClear() then
 			return Music.MUSIC_BOSS_OVER
@@ -962,15 +966,19 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 		
 		--initialize MINES/ASHPIT II RAIL BUTTONS upon discovery
 		if not modSaveData["railcomplete"] and (level:GetStage() == LevelStage.STAGE2_2 or (level:GetStage() == LevelStage.STAGE2_1 and curseoflabyrinth)) and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
-			for i = 1, room:GetGridSize() do
-				local gridentity = room:GetGridEntity(i)
-				if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
-					--found a rail button
-					local roomidx = level:GetCurrentRoomDesc().SafeGridIndex
-					if modSaveData["railbuttons"][tostring(roomidx)] == nil then
-						modSaveData["railbuttons"][tostring(roomidx)] = false
+			local roomdesc = level:GetCurrentRoomDesc()
+			local roomdescflags = roomdesc.Flags
+			if (roomdescflags & RoomDescriptor.FLAG_RED_ROOM) == 0 then
+				for i = 1, room:GetGridSize() do
+					local gridentity = room:GetGridEntity(i)
+					if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
+						--found a rail button
+						local roomidx = roomdesc.SafeGridIndex
+						if modSaveData["railbuttons"][tostring(roomidx)] == nil then
+							modSaveData["railbuttons"][tostring(roomidx)] = false
+						end
+						break
 					end
-					break
 				end
 			end
 		end
@@ -1004,7 +1012,12 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 			end
 			
 			if not skipCrossfade then
-				musicCrossfade(getMusicTrack())
+				local musictrack = getMusicTrack()
+				if musictrack == Music.MUSIC_BOSS_OVER_TWISTED then
+					musicPlay(musictrack)
+				else
+					musicCrossfade(musictrack)
+				end
 			end
 		else
 			--if we change rooms while waiting for game start jingle, update "nexttrack"
@@ -1040,11 +1053,14 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, function()
 	end
 end)
 
-MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function(self, ent)
-	if ent.Variant == 2 then
+MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_INIT, function(self, ent)
+	local room = Game():GetRoom()
+	local roomtype = room:GetType()
+	
+	if roomtype == RoomType.ROOM_BOSS and room:GetBossID() == 63 then
 		musicCrossfade(Music.MUSIC_HUSH_BOSS)
 	end
-end, EntityType.ENTITY_ISAAC)
+end, EntityType.ENTITY_HUSH)
 
 --[[MusicModCallback:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, function()
     modSaveData["darkhome"] = 5
@@ -1157,7 +1173,11 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 				end
 				if v["nexttrack"] then
 					--Isaac.DebugString("nexttrack found to be "..tostring(v["nexttrack"]))
-					musicCrossfade(v["nexttrack"])
+					if v["nexttrack"] == Music.MUSIC_BOSS_OVER_TWISTED then
+						musicPlay(v["nexttrack"])
+					else
+						musicCrossfade(v["nexttrack"])
+					end
 					v["nexttrack"] = nil
 				else --failsafe for game start jingles, but nexttrack should be set for those, too
 					if room:GetType() ~= RoomType.ROOM_BOSS or room:IsClear() then
@@ -1440,29 +1460,32 @@ MusicModCallback:AddCallback(ModCallbacks.MC_POST_RENDER, function()
 	
 	--MINES/ASHPIT II RAIL BUTTONS
 	if not modSaveData["railcomplete"] and (level:GetStage() == LevelStage.STAGE2_2 or (level:GetStage() == LevelStage.STAGE2_1 and curseoflabyrinth)) and level:GetStageType() >= StageType.STAGETYPE_REPENTANCE then
-		for i = 1, room:GetGridSize() do
-			local gridentity = room:GetGridEntity(i)
-			if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
-				--found a rail button (variant 3)
-				local railbuttonpressednow = (gridentity.State == 3) --State 3 is pressed
-				local roomidx = level:GetCurrentRoomDesc().SafeGridIndex
-				if railbuttonpressednow and not modSaveData["railbuttons"][tostring(roomidx)] then
-					modSaveData["railbuttons"][tostring(roomidx)] = true
-					
-					--now check if this is the third button pressed
-					local numrailbuttonspressed = 0
-					for j,v in pairs(modSaveData["railbuttons"]) do
-						if v then
-							numrailbuttonspressed = numrailbuttonspressed + 1
+		local roomdescflags = roomdesc.Flags
+		if (roomdescflags & RoomDescriptor.FLAG_RED_ROOM) == 0 then
+			for i = 1, room:GetGridSize() do
+				local gridentity = room:GetGridEntity(i)
+				if gridentity and gridentity:GetType() == GridEntityType.GRID_PRESSURE_PLATE and gridentity:GetVariant() == 3 then
+					--found a rail button (variant 3)
+					local railbuttonpressednow = (gridentity.State == 3) --State 3 is pressed
+					local roomidx = roomdesc.SafeGridIndex
+					if railbuttonpressednow and not modSaveData["railbuttons"][tostring(roomidx)] then
+						modSaveData["railbuttons"][tostring(roomidx)] = true
+						
+						--now check if this is the third button pressed
+						local numrailbuttonspressed = 0
+						for j,v in pairs(modSaveData["railbuttons"]) do
+							if v then
+								numrailbuttonspressed = numrailbuttonspressed + 1
+							end
+						end
+						
+						if numrailbuttonspressed == 3 then
+							musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
+							modSaveData["railcomplete"] = true
 						end
 					end
-					
-					if numrailbuttonspressed == 3 then
-						musicPlay(Music.MUSIC_JINGLE_SECRETROOM_FIND, getMusicTrack())
-						modSaveData["railcomplete"] = true
-					end
+					break
 				end
-				break
 			end
 		end
 	end
