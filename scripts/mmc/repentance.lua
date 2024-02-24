@@ -632,11 +632,11 @@ local function getMusicTrack()
 		return Music.MUSIC_SECRET_ROOM_ALT_ALT
 	elseif roomtype == RoomType.ROOM_SECRET_EXIT then
 		return Music.MUSIC_BOSS_OVER --the rooms with the exits to the Repentance alt floors
-	elseif roomtype == RoomType.ROOM_DUNGEON and stage == LevelStage.STAGE8 and roomidx == -10 then
+	elseif roomtype == RoomType.ROOM_DUNGEON and stage == LevelStage.STAGE8 and roomidx == GridRooms.ROOM_SECRET_EXIT_IDX then
 		return Music.MUSIC_BEAST_BOSS
-	elseif roomidx == -14 then
+	elseif roomidx == GridRooms.ROOM_ROTGUT_DUNGEON1_IDX then
 		return getGenericBossMusic()
-	elseif roomidx == -15 then
+	elseif roomidx == GridRooms.ROOM_ROTGUT_DUNGEON2_IDX then
 		return getGenericBossMusic()
 	else
 		return getStageMusic()
@@ -701,7 +701,7 @@ local function iterateThroughCallbacks(track, isQueued) -- returns correct track
 	return track
 end
 
-function musicCrossfade(track, track2)
+function musicCrossfade(track, track2) --TODO: make use of faderate argument?
 	local replacedtrack2 = false
 	local id, id2, jinglelength = iterateThroughCallbacks(track, false)
 	if id2 then replacedtrack2 = true end
